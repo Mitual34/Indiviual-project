@@ -1,0 +1,7 @@
+vendor,paper_task,method_family,scoring_approach,explainability,alignment_with_paper
+ComplyCube,Client risk profiling (onboarding),Rules + marketed AI risk engine,"Configurable rules, auto approve/reject/escalate",Not found,Paper P4 compliance unclear
+Onfido (Entrust),Neither; identity verification layer (paper 5.3 KYC image checks),"Deep ML micro-models (10,000+ claimed)",Per-check verdict,Not found,Matches paper 5.3 (deep nets for images)
+SmartSearch,Client risk profiling (UK AML/KYB),Configurable rules,Customer risk rules,Rules are inherently interpretable,Matches paper's 'traditional rules: interpretable but inefficient'
+Kyckr,Data layer feeding client risk profiling,None (registry/UBO data),None,N/A,"Supplies ownership features (paper cites ownership info as useful, Borrajo et al.)"
+PassFort (Moody's),Client risk profiling,Configurable weighted rule models,"Weighted factors vs thresholds, review tiers",Transparent policies,Closest to a rules scorecard
+ComplyAdvantage,Both: screening (client) and transaction monitoring (behaviour),ML + NLP + entity resolution,ML alert prioritisation,Explainable-AI position published,Only vendor reviewed with documented ML for behaviour flagging

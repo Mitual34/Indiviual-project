@@ -1,0 +1,104 @@
+{
+  "P1_metrics": {
+    "holdout_prevalence": 0.13666666666666666,
+    "accuracy_all_negative_classifier": 0.8633333333333333,
+    "accuracy_logreg_at_0_5": 0.7333333333333333,
+    "logreg_ap": 0.3103259802756227,
+    "logreg_roc_auc": 0.6748752236557115,
+    "logreg_precision_at_capacity": 0.26666666666666666,
+    "logreg_recall_at_capacity": 0.3902439024390244,
+    "reading": "If the all-negative classifier's accuracy is close to the model's, accuracy is uninformative (paper P1)."
+  },
+  "P2_imbalance": {
+    "none": {
+      "holdout_ap": 0.3095654719414619,
+      "holdout_roc_auc": 0.6741218570486863
+    },
+    "class_weight=balanced": {
+      "holdout_ap": 0.3103259802756227,
+      "holdout_roc_auc": 0.6748752236557115
+    },
+    "random_oversampling": {
+      "holdout_ap": 0.3290493742623239,
+      "holdout_roc_auc": 0.6925793389208023
+    },
+    "random_undersampling": {
+      "holdout_ap": 0.3151170883941615,
+      "holdout_roc_auc": 0.6945569262642433
+    }
+  },
+  "P2_note": "Training prevalence is 22.9%, so imbalance is mild; re-weighting mainly shifts calibration, not ranking.",
+  "P3_supervised_vs_unsupervised": {
+    "Logistic regression (supervised)": {
+      "holdout_ap": 0.3103259802756227,
+      "holdout_roc_auc": 0.6748752236557115
+    },
+    "Isolation forest (unsupervised)": {
+      "holdout_ap": 0.2995958344592019,
+      "holdout_roc_auc": 0.6499199547980036,
+      "delta_ap_vs_logreg_ci95": [
+        -0.1278949923217749,
+        0.08168870742553284
+      ]
+    },
+    "K-means distance, K=7 (unsupervised)": {
+      "holdout_ap": 0.2763187595139979,
+      "holdout_roc_auc": 0.6027403710330539,
+      "delta_ap_vs_logreg_ci95": [
+        -0.14328540271526807,
+        0.0516582093321164
+      ]
+    },
+    "random_baseline_ap": 0.13666666666666666
+  },
+  "P4_interpretability": {
+    "table": {
+      "logreg_abs_coef": {
+        "company_age_years": 0.0103,
+        "late_filings": 0.0214,
+        "officer_changes": 0.0459,
+        "jurisdiction_flag": 2.6616,
+        "pep_flag": 1.8462,
+        "sanctions_proximity_flag": 1.3834,
+        "industry": 0.0526,
+        "company_status": 0.0132
+      },
+      "ebm_importance": {
+        "company_age_years": 0.0152,
+        "late_filings": 0.0151,
+        "officer_changes": 0.0303,
+        "jurisdiction_flag": 7.2507,
+        "pep_flag": 3.512,
+        "sanctions_proximity_flag": 1.9658,
+        "industry": 0.0506,
+        "company_status": 0.0142
+      },
+      "xgb_permutation_ap_drop": {
+        "company_age_years": 0.0,
+        "late_filings": 0.0,
+        "officer_changes": 0.0,
+        "jurisdiction_flag": 0.0706,
+        "pep_flag": 0.0057,
+        "sanctions_proximity_flag": 0.0404,
+        "industry": 0.0,
+        "company_status": 0.0
+      }
+    },
+    "spearman_lr_vs_ebm": 0.9285714285714287,
+    "spearman_lr_vs_xgb_permutation": 0.8455943246644705,
+    "reading": "High rank agreement means the intrinsically interpretable model and post-hoc explanation tell the same story."
+  },
+  "P5_calibration": {
+    "Logistic regression (balanced)": {
+      "mean_predicted": 0.2735826775527252,
+      "observed_rate": 0.13666666666666666,
+      "brier": 0.2552102316901277
+    },
+    "Logistic regression (unweighted)": {
+      "mean_predicted": 0.26140658068141226,
+      "observed_rate": 0.13666666666666666,
+      "brier": 0.24687171293691415
+    },
+    "brier_of_constant_prevalence_forecast": 0.11798888888888887
+  }
+}
