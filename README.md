@@ -11,6 +11,12 @@ IEEE Access 11 (arXiv:2201.04207).** The earlier basis, Ananthaswamy's *Why Mach
 - `paper_concept_map.csv`, `vendor_vs_paper.csv`, `vendor_matrix.csv` - paper findings mapped to local evidence and to
   ComplyCube, Onfido/Entrust, SmartSearch, Kyckr, PassFort (Moody's), ComplyAdvantage
 
+## Console UI (`ui/`)
+`ui/kyb_os.html` is a self-contained KYB-OS console (dashboard, UK map, case pipeline, ownership network, model comparison,
+source vault) built from the project's own synthetic outputs. Rebuild with `python ui/build_data.py && python ui/build_map.py && python ui/build.py`
+(`build_map.py` needs `shapely` and the GB local-authority GeoJSON from martinjc/UK-GeoJSON; Northern Ireland is not in that set).
+Case locations on the map are simulated, not real addresses.
+
 ## Run
     pip install -r rq1/requirements.txt scipy
     cd rq1

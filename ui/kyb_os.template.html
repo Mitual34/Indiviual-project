@@ -1,0 +1,374 @@
+<title>KYB-OS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:wght@500;600&display=swap">
+<style>
+/* Concept: one console over one set of case records. A left rail switches between Dashboard, Map, Cases, Network,
+   Models and Vault; every view reads the same cases, so a flag or a stage change shows up everywhere. Warm paper
+   ground, terracotta for action, serif for names and figures, mono for labels (the MINML-OS look the user asked for). */
+:root{
+  --bg:#fbf9f6; --panel:#fffefc; --panel2:#f4eee6; --line:#e5dcd1; --fg:#201b17; --muted:#6c6158;
+  --accent:#c0532e; --accent-soft:#f7e4dc; --good:#2c8573; --good-soft:#dcefea; --warn:#a96d17; --warn-soft:#f6e9cf;
+  --bad:#b0342c; --bad-soft:#f5dad7; --info:#37689c; --info-soft:#dde9f4;
+  --serif:'Source Serif 4',Georgia,'Times New Roman',serif; --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171310; --panel:#1f1a16; --panel2:#2a231e; --line:#3c332b; --fg:#f2ebe3; --muted:#a99d91;
+  --accent:#e47a54; --accent-soft:#3d241b; --good:#58c0aa; --good-soft:#18332d; --warn:#e0a24b; --warn-soft:#3a2c14;
+  --bad:#ef7a71; --bad-soft:#40201d; --info:#79a8dc; --info-soft:#1c2a3b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171310; --panel:#1f1a16; --panel2:#2a231e; --line:#3c332b; --fg:#f2ebe3; --muted:#a99d91;
+  --accent:#e47a54; --accent-soft:#3d241b; --good:#58c0aa; --good-soft:#18332d; --warn:#e0a24b; --warn-soft:#3a2c14;
+  --bad:#ef7a71; --bad-soft:#40201d; --info:#79a8dc; --info-soft:#1c2a3b; color-scheme:dark}
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 var(--sans)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:224px minmax(0,1fr);grid-template-rows:minmax(0,1fr);height:100%}
+.rail{border-right:1px solid var(--line);background:var(--bg);display:flex;flex-direction:column;padding:18px 12px 12px max(16px,env(safe-area-inset-left,0px))}
+.brand{font:500 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:2px 4px 18px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;gap:10px;align-items:center;background:none;border:0;border-left:2px solid transparent;border-radius:2px;padding:9px 10px;text-align:left;font:15px var(--serif);color:var(--muted)}
+.nav button:hover{background:var(--panel2)}
+.nav button[aria-current=page]{background:var(--accent-soft);color:var(--fg);border-left-color:var(--accent)}
+.nav svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;flex:none}
+.rail .foot{margin-top:auto;font:11px var(--mono);color:var(--muted);letter-spacing:.06em;padding:10px 4px 0;border-top:1px solid var(--line)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-right:6px}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
+.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px 20px;border-bottom:1px solid var(--line);background:var(--bg)}
+.top h1{margin:0;font:600 21px var(--serif)} .top .sub{font:12px var(--mono);color:var(--muted)}
+.tag{font:500 10.5px var(--mono);letter-spacing:.08em;padding:3px 7px;border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:2px;text-transform:uppercase}
+.sp{flex:1}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:6px 10px;min-width:200px}
+.search input{border:0;background:none;outline:0;width:100%;min-width:0}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:6px 12px;font-size:13px}
+.btn:hover{border-color:var(--accent)} .btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.view{flex:1;min-height:0;overflow:auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 28px 20px}
+.view.flush{padding:0;overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr)}
+.lab{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.grid{display:grid;gap:16px} .g3{grid-template-columns:1.1fr 1.1fr 1.2fr} .g4{grid-template-columns:repeat(4,minmax(0,1fr))} .g2{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.pad{padding:18px 20px}
+.big{font:600 38px/1.1 var(--serif);letter-spacing:-.01em;margin:8px 0 6px} .big.acc{color:var(--accent)}
+.small{font:13px var(--serif);color:var(--muted)}
+.stat{border-left:3px solid var(--accent);padding:14px 16px} .stat.g{border-left-color:var(--good)} .stat.w{border-left-color:var(--warn)} .stat.i{border-left-color:var(--info)}
+.stat .v{font:600 28px var(--serif);margin:6px 0 2px}
+.bar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin:10px 0} .bar i{display:block;height:100%;background:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.tile{border:1px solid var(--line);background:var(--panel2);text-align:center;padding:12px 6px;border-radius:2px}
+.tile b{display:block;font:600 26px var(--serif)} .tile span{font:10.5px var(--mono);letter-spacing:.1em;color:var(--muted)}
+.funnel{display:grid;grid-template-columns:repeat(9,minmax(86px,1fr));gap:8px;overflow-x:auto;padding:12px}
+.fc{background:var(--accent-soft);border-radius:2px;padding:12px 6px;text-align:center;min-width:86px} .fc.off{background:var(--panel2);opacity:.65}
+.fc b{display:block;font:600 22px var(--serif);color:var(--accent)} .fc.off b{color:var(--muted)}
+.fc span{display:block;font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px} .fc em{font:10px var(--mono);color:var(--muted);font-style:normal}
+.row{display:flex;gap:12px;align-items:center;padding:12px 18px;border-top:1px solid var(--line);min-width:0}
+.row:first-child{border-top:0} .row .t{flex:1;min-width:0} .row .t b{font:500 15px var(--serif);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t small{color:var(--muted);font-size:12px}
+.sc{font:600 17px var(--serif);min-width:34px;text-align:right} .sc.bad{color:var(--bad)} .sc.warn{color:var(--warn)} .sc.mute{color:var(--muted)}
+.chip{font:500 10px var(--mono);letter-spacing:.07em;padding:2px 6px;border-radius:2px;border:1px solid var(--line);text-transform:uppercase;white-space:nowrap;background:var(--panel2);color:var(--muted)}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent} .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.good{background:var(--good-soft);color:var(--good);border-color:transparent} .chip.info{background:var(--info-soft);color:var(--info);border-color:transparent}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.sig{display:flex;gap:10px;padding:11px 18px;border-top:1px solid var(--line)} .sig:first-of-type{border-top:0}
+.sig i{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none} .sig b{font:500 14px var(--serif);display:block} .sig small{color:var(--muted);font-size:12px}
+.hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:14px 18px 10px;border-bottom:1px solid var(--line)}
+.hd a,.link{color:var(--accent);background:none;border:0;font:13px var(--serif);cursor:pointer;padding:0}
+.kan{display:grid;grid-template-columns:repeat(5,minmax(210px,1fr));gap:14px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--panel2);border-radius:3px;border-top:3px solid var(--c,var(--line));padding:10px;min-width:0}
+.col h3{margin:0 0 10px;display:flex;justify-content:space-between;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.cc{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c,var(--line));border-radius:3px;padding:10px 12px;margin-bottom:10px}
+.cc .tp{display:flex;justify-content:space-between;align-items:center} .cc b{font:500 15px var(--serif);display:block;margin:6px 0 2px} .cc p{margin:4px 0 8px;color:var(--muted);font-size:12px}
+.acts{display:flex;gap:6px;margin-top:8px} .acts button{border:1px solid var(--line);background:var(--panel);border-radius:3px;width:30px;height:28px;padding:0}
+.acts button:hover{border-color:var(--accent)} .acts button:disabled{opacity:.35;cursor:default}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:minmax(0,1fr);min-height:0}
+.mapwrap{position:relative;min-width:0;min-height:320px;background:var(--panel2);overflow:hidden}
+.mapwrap svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab} .mapwrap svg.area{cursor:crosshair} .mapwrap svg{user-select:none;-webkit-user-select:none}
+.zoom{position:absolute;left:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:34px;height:34px;border:1px solid var(--line);background:var(--panel);border-radius:3px;font-size:17px}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);padding:8px 10px;border-radius:3px;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,.12);display:none;max-width:220px}
+.tip b{font:500 14px var(--serif);display:block}
+.side{border-left:1px solid var(--line);overflow:auto;min-height:0;background:var(--bg)} .sec{padding:14px 16px;border-bottom:1px solid var(--line)}
+.sec h4{margin:0 0 10px} .opt{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px} .opt input[type=range]{flex:1}
+select,.sel{border:1px solid var(--line);background:var(--panel);border-radius:3px;padding:5px 8px;max-width:100%}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)} .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+.note{font-size:11.5px;color:var(--muted);line-height:1.45}
+table{width:100%;border-collapse:collapse;font-size:13px} th{font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top} .scroll{overflow-x:auto}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden} .seg button{border:0;background:var(--panel);padding:6px 12px;font-size:13px} .seg button[aria-pressed=true]{background:var(--accent);color:#fff}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:3px;font-size:13px;z-index:20;max-width:90vw}
+.graph{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:16px}
+svg text{font-family:var(--sans)} .halo{paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+textarea.csv{width:100%;height:120px;font:11px var(--mono);background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .rail{flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--line);padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));overflow-x:auto;gap:8px}
+  .brand{padding:0 8px 0 0;white-space:nowrap} .nav{flex-direction:row} .nav button{border-left:0;border-bottom:2px solid transparent;white-space:nowrap;padding:7px 9px} .nav button[aria-current=page]{border-bottom-color:var(--accent)} .rail .foot{display:none}
+  .g3,.g4,.g2,.graph{grid-template-columns:1fr} .g4{grid-template-columns:1fr 1fr}
+  .split{grid-template-columns:1fr;grid-template-rows:minmax(340px,55vh) auto} .view.flush{overflow:auto;display:block} .side{border-left:0;border-top:1px solid var(--line)}
+  .top{padding-left:16px} .view{padding-left:16px} .search{min-width:0;flex:1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand">KYB·OS</div>
+    <nav class="nav" id="nav" aria-label="Applications"></nav>
+    <div class="foot"><span class="dot"></span>Demo · nothing saved<br>Synthetic cases</div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <h1 id="ttl">Dashboard</h1><span class="sub" id="sub"></span><span class="tag">Demo data</span><span class="sp"></span>
+      <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search company, id, authority, address" aria-label="Search cases"></label>
+      <button class="btn" data-act="csv">Copy CSV</button>
+    </header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script type="application/json" id="d">__DATA__</script>
+<script type="application/json" id="g">__GEO__</script>
+<script>
+(()=>{
+const D=JSON.parse(document.getElementById('d').textContent), GEO=JSON.parse(document.getElementById('g').textContent);
+const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const pct=(x,d=0)=>(x*100).toFixed(d)+'%', n0=x=>x.toLocaleString('en-GB');
+const st={view:'dashboard',q:'',scope:'internal',sel:D.cases[0].id,moves:{},log:[
+ {t:'09:02:11',who:'Analyst',a:'Promotion',d:'Case batch promoted to review queue'},{t:'09:14:40',who:'Partner',a:'Refused read',d:'Live register access denied (demo scope)'},{t:'09:31:05',who:'Analyst',a:'Export',d:'Review queue CSV copied'}]};
+try{st.moves=JSON.parse(localStorage.getItem('kybos.moves')||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem('kybos.moves',JSON.stringify(st.moves))}catch(e){}};
+const byId=Object.fromEntries(D.cases.map(c=>[c.id,c]));
+const STAGES=[['screening','Screening','--info'],['review','Review','--warn'],['edd','EDD','--accent'],['decision','Decision','--bad'],['cleared','Cleared','--good']];
+const stage=c=>st.moves[c.id]||c.stage;
+const mask=n=>n.replace(/^(\w{2})\w+/,'$1•••••'), nm=c=>st.scope==='internal'?c.name:mask(c.name);
+const sc=c=>c.score>=85?'bad':c.score>=70?'warn':'mute';
+const match=c=>!st.q||(c.name+' '+c.id+' '+c.sector+' '+(c.addrname||'')+' '+GEO.lads[c.lad].n).toLowerCase().includes(st.q.toLowerCase());
+const flagChips=c=>`<span class="chips">${c.flags[0]?'<span class="chip warn">Jurisdiction</span>':''}${c.flags[1]?'<span class="chip info">PEP</span>':''}${c.flags[2]?'<span class="chip bad">Sanctions</span>':''}${c.flags.some(Boolean)?'':'<span class="chip">No flags</span>'}</span>`;
+const stagePill=s=>{const x=STAGES.find(a=>a[0]===s);return `<span class="chip" style="color:var(${x[2]})">${x[1]}</span>`};
+const log=(a,d)=>{st.log.unshift({t:new Date().toTimeString().slice(0,8),who:({internal:'Analyst',partner:'Partner',regulator:'Regulator'})[st.scope],a,d});};
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)};
+const cnt=s=>D.cases.filter(c=>stage(c)===s).length;
+const ICON={dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
+ map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',cases:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+ network:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="m8 7 8 1M7 8l4 8M17 10l-4 6"/>',
+ models:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',vault:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'};
+const VIEWS=[['dashboard','Dashboard','Case screening'],['map','Map','Registered offices and shared addresses'],['cases','Cases','Review pipeline'],['network','Network','Ownership and officer links'],['models','Models','Scoring methods on the holdout'],['vault','Vault','Sources, scopes and audit']];
+
+/* ---------------- Dashboard ---------------- */
+function vDashboard(){
+  const cs=D.cases, queue=cnt('review')+cnt('edd')+cnt('decision'), lr=D.models.find(m=>m.name==='Logistic regression');
+  const fl=i=>cs.filter(c=>c.flags[i]).length, late2=cs.filter(c=>(c.late||0)>=2).length;
+  const fun=[['Intake',cs.length],['Registry',cs.length],['Sanctions · PEP',cs.length],['Adverse media',null],['Risk score',cs.length],['Review queue',queue],['EDD',cnt('edd')+cnt('decision')],['Decision',cnt('decision')],['Cleared',cnt('cleared')]];
+  const top=cs.filter(match).slice(0,8);
+  const sig=[];cs.forEach(c=>{if(sig.length>=6)return;
+    if(c.flags[2])sig.push(['bad',`Sanctions-proximity flag on ${nm(c)}`,'Name hit needs corroboration (identifier, country) before escalation']);
+    else if(c.flags[1])sig.push(['warn',`PEP flag on ${nm(c)}`,'Confirm birth year and nationality against the PEP record']);
+    else if((c.late||0)>=3||c.officers>=3)sig.push(['warn',`${nm(c)}: ${c.late??'?'} late filings, ${c.officers} officer changes`,'Filing and officer churn in the lookback window']);});
+  return `<div class="grid g3">
+   <div class="card pad"><div class="lab">Cases screened</div><div class="big">${n0(D.holdout_n)}</div><div class="small">Synthetic holdout · ${D.positives} true EDD cases (${pct(D.prevalence,1)})</div></div>
+   <div class="card pad"><div class="lab">Analyst capacity</div><div class="big acc">${queue}<span style="font-size:20px;color:var(--muted)"> / ${D.capacity}</span></div>
+     <div class="bar"><i style="width:${Math.min(100,queue/D.capacity*100)}%"></i></div><div class="small">Logistic regression: precision ${pct(lr.prec)} · recall ${pct(lr.rec)} at capacity</div><button class="link" data-go="models">Open models →</button></div>
+   <div class="card pad"><div class="lab">Recommendations</div><div class="tiles">
+     <div class="tile"><b>${cnt('decision')}</b><span>ESCALATE</span></div><div class="tile"><b>${cnt('edd')}</b><span>EDD</span></div><div class="tile"><b>${cnt('review')}</b><span>REVIEW</span></div></div></div></div>
+  <div class="grid g4" style="margin-top:16px">
+   <div class="card stat"><div class="lab">Sanctions-proximity flags</div><div class="v">${fl(2)}</div><div class="small">of ${cs.length} cases</div></div>
+   <div class="card stat i"><div class="lab">PEP flags</div><div class="v">${fl(1)}</div><div class="small">of ${cs.length} cases</div></div>
+   <div class="card stat w"><div class="lab">Jurisdiction flags</div><div class="v">${fl(0)}</div><div class="small">policy list, dated</div></div>
+   <div class="card stat g"><div class="lab">Two or more late filings</div><div class="v">${late2}</div><div class="small">${cs.filter(c=>c.late==null).length} unknown, kept as unknown</div></div></div>
+  <div class="hd" style="padding-left:0;border:0;margin-top:18px"><span class="lab">Screening funnel</span><button class="link" data-go="cases">Open cases →</button></div>
+  <div class="card funnel">${fun.map((f,i)=>`<div class="fc ${f[1]==null?'off':''}"><b>${f[1]==null?'–':f[1]}</b><span>${f[0]}</span><em>${f[1]==null?'not connected':i<7&&fun[i+1][1]!=null&&f[1]?'→ '+Math.round(fun[i+1][1]/f[1]*100)+'%':''}</em></div>`).join('')}</div>
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card"><div class="hd"><div><div class="lab">Cases by risk</div><div class="small">Model score, highest first</div></div><button class="link" data-go="cases">All cases →</button></div>
+    ${top.map(c=>`<div class="row"><div class="t"><b>${esc(nm(c))}</b><small>${c.sector} · ${c.status} · ${c.age} yrs · ${esc(GEO.lads[c.lad].n)}</small></div>${flagChips(c)}<span class="sc ${sc(c)}">${c.score}</span>${stagePill(stage(c))}</div>`).join('')||'<div class="row small">No cases match.</div>'}</div>
+   <div class="card"><div class="hd"><div><div class="lab">Signals</div><div class="small">Live operational alerts</div></div></div>
+    ${sig.map(s=>`<div class="sig"><i style="background:var(--${s[0]})"></i><div><b>${esc(s[1])}</b><small>${s[2]}</small></div></div>`).join('')}</div></div>`;}
+
+/* ---------------- Cases ---------------- */
+function vCases(){
+  const cs=D.cases.filter(match);
+  return `<div class="grid g4" style="margin-bottom:16px">
+    <div class="card stat"><div class="lab">In pipeline</div><div class="v">${cs.filter(c=>stage(c)!=='cleared').length}</div></div>
+    <div class="card stat i"><div class="lab">EDD and decision</div><div class="v">${cs.filter(c=>['edd','decision'].includes(stage(c))).length}</div></div>
+    <div class="card stat w"><div class="lab">Avg score (queue)</div><div class="v">${Math.round(cs.filter(c=>stage(c)!=='cleared').reduce((a,c)=>a+c.score,0)/Math.max(1,cs.filter(c=>stage(c)!=='cleared').length))}</div></div>
+    <div class="card stat g"><div class="lab">Cleared</div><div class="v">${cs.filter(c=>stage(c)==='cleared').length}</div></div></div>
+  <div class="kan">${STAGES.map(([k,l,col],si)=>{const L=cs.filter(c=>stage(c)===k);return `<section class="col" style="--c:var(${col})"><h3><span>${l}</span><span>${L.length}</span></h3>
+    ${L.slice(0,6).map(c=>`<div class="cc" style="--c:var(${col})"><div class="tp"><span class="chip">${c.sector}</span><span class="sc ${sc(c)}">${c.score}</span></div><b>${esc(nm(c))}</b>
+     <p>${c.id} · ${c.status} · ${GEO.lads[c.lad].n}</p>${flagChips(c)}
+     <div class="acts"><button data-act="mv" data-id="${c.id}" data-d="-1" ${si===0?'disabled':''} aria-label="Move back">‹</button><button data-act="mv" data-id="${c.id}" data-d="1" ${si===4?'disabled':''} aria-label="Move forward">›</button><button data-act="net" data-id="${c.id}" aria-label="Open network" title="Open network">⌖</button><button data-act="pin" data-id="${c.id}" aria-label="Show on map" title="Show on map">◎</button></div></div>`).join('')||'<p class="note">Empty</p>'}
+    ${L.length>6?`<p class="note">+${L.length-6} more, lower scores</p>`:''}</section>`}).join('')}</div>
+  <p class="note" style="margin-top:12px">Stages are assigned from the logistic regression score on the synthetic holdout (top 5 escalate, next 15 EDD, next 40 review). Moves are kept in this browser only.</p>`;}
+
+/* ---------------- Map ---------------- */
+const MAP={vb:null,L:{density:true,pins:true,clusters:true,borders:true},mode:'count',min:0,stage:'all',f:[false,false,false],area:false,sel:null,as:null,els:[],moved:false};
+const mf=()=>D.cases.filter(c=>match(c)&&c.score>=MAP.min&&(MAP.stage==='all'||stage(c)===MAP.stage)&&c.flags.every((v,i)=>!MAP.f[i]||v));
+function vMap(){return `<div class="split"><div class="mapwrap" id="mw"><svg id="svg" role="img" aria-label="Map of simulated registered offices in Great Britain"><g id="gl"></g><g id="gc"></g><g id="gp"></g><rect id="gs" fill="var(--accent)" fill-opacity=".12" stroke="var(--accent)" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" display="none"/></svg>
+  <div class="zoom"><button data-act="zi" aria-label="Zoom in">+</button><button data-act="zo" aria-label="Zoom out">−</button><button data-act="zf" aria-label="Fit Great Britain" title="Fit">⤢</button><button data-act="area" id="areabtn" class="${MAP.area?'on':''}" aria-label="Define area" title="Define area">▭</button></div>
+  <div class="tip" id="tip"></div></div><aside class="side" id="side"></aside></div>`;}
+const k=()=>$('#svg').getScreenCTM().a;
+function setVB(){const v=MAP.vb;$('#svg').setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);paintPins();}
+function fitVB(){const r=$('#svg').getBoundingClientRect(),ar=r.width/Math.max(1,r.height);let w=GEO.w,h=GEO.h;if(w/h<ar)w=h*ar;else h=w/ar;MAP.vb={x:(GEO.w-w)/2,y:(GEO.h-h)/2,w,h};MAP.fit=w;setVB();}
+function fitTo(cs){if(!cs.length)return fitVB();const xs=cs.map(c=>c.x),ys=cs.map(c=>c.y),r=$('#svg').getBoundingClientRect(),ar=r.width/Math.max(1,r.height);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),m=GEO.w/12;let w=Math.max(x1-x0,m)*1.35,h=Math.max(y1-y0,m/ar)*1.35;
+  if(w/h<ar)w=h*ar;else h=w/ar;w=Math.min(w,MAP.fit);h=w/ar;MAP.vb={x:(x0+x1)/2-w/2,y:(y0+y1)/2-h/2,w,h};setVB();}
+function mountMap(){
+  const svg=$('#svg');$('#gl').innerHTML=GEO.lads.map((l,i)=>`<path data-i="${i}" d="${l.d}" vector-effect="non-scaling-stroke" stroke-width=".6" stroke-linejoin="round"/>`).join('');
+  MAP.els=[...document.querySelectorAll('#gl path')];
+  fitVB();paintAll();if(MAP.sel&&byId[MAP.sel])fitTo([byId[MAP.sel]]);else if(st.q)fitTo(MAP.f_);
+  const pt=(e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.25:.8,pt(e))},{passive:false});
+  svg.addEventListener('pointerdown',e=>{if(e.button!==0)return;MAP.moved=false;const s=pt(e);MAP.drag={x:e.clientX,y:e.clientY,vb:{...MAP.vb},s};
+    const mv=ev=>{const dx=ev.clientX-MAP.drag.x,dy=ev.clientY-MAP.drag.y;if(Math.abs(dx)+Math.abs(dy)>4)MAP.moved=true;
+      if(MAP.area){const p=pt(ev),r=$('#gs'),a=MAP.drag.s;r.setAttribute('x',Math.min(a.x,p.x));r.setAttribute('y',Math.min(a.y,p.y));r.setAttribute('width',Math.abs(p.x-a.x));r.setAttribute('height',Math.abs(p.y-a.y));r.setAttribute('display','');MAP.drag.p=p}
+      else{const q=k();MAP.vb={...MAP.drag.vb,x:MAP.drag.vb.x-dx/q,y:MAP.drag.vb.y-dy/q};setVB()}};
+    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);
+      if(MAP.area&&MAP.drag&&MAP.drag.p&&MAP.moved){const a=MAP.drag.s,p=MAP.drag.p,x0=Math.min(a.x,p.x),x1=Math.max(a.x,p.x),y0=Math.min(a.y,p.y),y1=Math.max(a.y,p.y);
+        MAP.as={ids:mf().filter(c=>c.x>=x0&&c.x<=x1&&c.y>=y0&&c.y<=y1).map(c=>c.id)};MAP.sel=null;log('Area query',MAP.as.ids.length+' cases in drawn area');side()}
+      MAP.drag=null};
+    addEventListener('pointermove',mv);addEventListener('pointerup',up)});
+  svg.addEventListener('click',e=>{if(MAP.moved)return;const c=e.target.closest('circle[data-id]');if(c){MAP.sel=c.dataset.id;MAP.as=null;st.sel=MAP.sel;paintPins();side()}
+    else if(e.target.closest('circle[data-addr]')){MAP.as={ids:mf().filter(x=>x.addr==e.target.closest('circle').dataset.addr).map(x=>x.id)};MAP.sel=null;side()}});
+  svg.addEventListener('mousemove',e=>{const p=e.target.closest('path[data-i]'),t=$('#tip');if(!p||MAP.drag){t.style.display='none';return}
+    const i=+p.dataset.i,a=MAP.agg[i],r=$('#mw').getBoundingClientRect();t.innerHTML=`<b>${esc(GEO.lads[i].n)}</b>${a.n} case${a.n===1?'':'s'}${a.n?` · avg score ${Math.round(a.s/a.n)} · ${a.hi} high`:''}`;
+    t.style.display='block';t.style.left=Math.min(r.width-230,e.clientX-r.left+14)+'px';t.style.top=(e.clientY-r.top+14)+'px'});
+  svg.addEventListener('mouseleave',()=>$('#tip').style.display='none');
+  side();}
+function zoom(f,c){const v=MAP.vb,nw=Math.max(MAP.fit/18,Math.min(MAP.fit,v.w/f)),s=nw/v.w;c=c||{x:v.x+v.w/2,y:v.y+v.h/2};
+  MAP.vb={x:c.x-(c.x-v.x)*s,y:c.y-(c.y-v.y)*s,w:nw,h:v.h*s};setVB();}
+function paintAll(){
+  const f=mf();MAP.agg=GEO.lads.map(()=>({n:0,s:0,hi:0}));f.forEach(c=>{const a=MAP.agg[c.lad];a.n++;a.s+=c.score;if(c.score>=85)a.hi++});
+  const mx=Math.max(1,...MAP.agg.map(a=>a.n));
+  MAP.els.forEach((p,i)=>{const a=MAP.agg[i],on=MAP.L.density&&a.n,t=on?(MAP.mode==='count'?a.n/mx:Math.max(0,(a.s/a.n-40)/60)):0;
+    p.style.fill=on?'var(--accent)':'var(--panel)';p.style.fillOpacity=on?(.14+.78*t):1;p.style.stroke=MAP.L.borders?'var(--line)':'none'});
+  MAP.f_=f;paintPins();}
+function paintPins(){
+  const q=k(),f=MAP.f_||[];let h='',c='';
+  if(MAP.L.clusters)D.addresses.forEach(a=>{const m=f.filter(x=>x.addr===a.k);if(m.length<2)return;
+    c+=`<circle data-addr="${a.k}" cx="${a.x}" cy="${a.y}" r="${11/q}" fill="var(--bad)" fill-opacity=".12" stroke="var(--bad)" stroke-width="${1.4/q}" stroke-dasharray="${4/q} ${3/q}"/>
+        <text class="halo" style="stroke-width:${4/q}px" x="${a.x+14/q}" y="${a.y-9/q}" font-size="${11/q}" fill="var(--bad)" font-weight="600">${MAP.vb.w<MAP.fit/3?m.length+' at '+esc(a.name.replace(' (demo)','')):m.length}</text>`});
+  if(MAP.L.pins)f.slice().sort((a,b)=>a.score-b.score).forEach(x=>{const r=(3+x.score/100*3.2)/q,col=x.score>=85?'--bad':x.score>=70?'--warn':'--info',on=MAP.sel===x.id||(MAP.as&&MAP.as.ids.includes(x.id));
+    h+=`<circle data-id="${x.id}" cx="${x.x}" cy="${x.y}" r="${r}" fill="var(${col})" fill-opacity=".85" stroke="${on?'var(--fg)':'var(--panel)'}" stroke-width="${(on?2.2:.9)/q}"><title>${esc(nm(x))} · score ${x.score}</title></circle>`});
+  $('#gp').innerHTML=h;$('#gc').innerHTML=c;}
+function caseCard(c){return `<div class="sec"><div class="lab">Selected case</div><h4 style="font:600 18px var(--serif);margin:6px 0 4px">${esc(nm(c))}</h4>
+  <div class="small">${c.id} · ${c.sector} · ${c.status} · ${c.age} yrs</div><p style="margin:8px 0">${esc(c.addrname||'Simulated address')} · ${esc(GEO.lads[c.lad].n)}</p>
+  <div class="chips" style="margin-bottom:8px"><span class="chip ${sc(c)==='mute'?'':sc(c)}">Score ${c.score}</span>${stagePill(stage(c))}</div>${flagChips(c)}
+  <div class="acts" style="margin-top:12px"><button class="btn" style="width:auto;height:auto" data-act="net" data-id="${c.id}">Open network</button></div></div>`}
+function side(){
+  const f=mf(),cl=D.addresses.map(a=>({a,n:f.filter(x=>x.addr===a.k).length})).filter(x=>x.n>1);
+  let sel='';
+  if(MAP.as){const L=MAP.as.ids.map(i=>byId[i]).sort((a,b)=>b.score-a.score);
+    sel=`<div class="sec"><div class="lab">Area selection</div><h4 style="font:600 18px var(--serif);margin:6px 0">${L.length} case${L.length===1?'':'s'}${L.length?` · avg ${Math.round(L.reduce((a,c)=>a+c.score,0)/L.length)}`:''}</h4>
+     ${L.slice(0,6).map(c=>`<div class="row" style="padding:7px 0"><div class="t"><b style="font-size:14px">${esc(nm(c))}</b><small>${esc(GEO.lads[c.lad].n)}</small></div><span class="sc ${sc(c)}">${c.score}</span></div>`).join('')}
+     ${L.length>6?`<p class="note">+${L.length-6} more</p>`:''}<div class="acts"><button class="btn" style="width:auto;height:auto" data-act="copyids">Copy IDs</button><button class="btn" style="width:auto;height:auto" data-act="clear">Clear</button></div></div>`}
+  else if(MAP.sel)sel=caseCard(byId[MAP.sel]);
+  else sel=`<div class="sec"><div class="lab">Selection</div><p class="note">Click a pin or a dashed address ring. Use ▭ to draw an area and list the cases inside it.</p></div>`;
+  $('#side').innerHTML=`${sel}<div class="sec"><div class="lab">Layers</div>
+   ${[['density','Authority density'],['pins','Case pins'],['clusters','Shared addresses'],['borders','Authority borders']].map(([a,l])=>`<label class="opt"><input type="checkbox" data-l="${a}" ${MAP.L[a]?'checked':''}> ${l}</label>`).join('')}
+   <label class="opt">Shade by <select id="mode"><option value="count" ${MAP.mode==='count'?'selected':''}>case count</option><option value="risk" ${MAP.mode==='risk'?'selected':''}>average score</option></select></label></div>
+  <div class="sec"><div class="lab">Filters · ${f.length} of ${D.cases.length} shown</div>
+   <label class="opt">Min score <input type="range" id="min" min="0" max="100" value="${MAP.min}"><b>${MAP.min}</b></label>
+   <label class="opt">Stage <select id="stg"><option value="all">All</option>${STAGES.map(s=>`<option value="${s[0]}" ${MAP.stage===s[0]?'selected':''}>${s[1]}</option>`).join('')}</select></label>
+   ${['Jurisdiction','PEP','Sanctions'].map((l,i)=>`<label class="opt"><input type="checkbox" data-f="${i}" ${MAP.f[i]?'checked':''}> ${l} flag only</label>`).join('')}</div>
+  <div class="sec"><div class="lab">Shared addresses</div>${cl.length?cl.map(x=>`<div class="row" style="padding:7px 0"><div class="t"><b style="font-size:14px">${esc(x.a.name)}</b><small>${esc(GEO.lads[x.a.lad].n)}</small></div><span class="chip bad">${x.n} cos</span></div>`).join(''):'<p class="note">None under the current filters.</p>'}
+   <p class="note">Many companies at one registered office is a classic shell-company signal.</p></div>
+  <div class="sec"><div class="lab">Legend</div><div class="legend"><span><i style="background:var(--bad)"></i>score 85+</span><span><i style="background:var(--warn)"></i>70–84</span><span><i style="background:var(--info)"></i>below 70</span></div>
+   <p class="note" style="margin-top:10px">Locations are simulated for this demo, not real addresses. A live build would geocode each registered-office postcode from Companies House. Great Britain only; Northern Ireland is not in this boundary set. Boundaries: 2013 local authority districts from martinjc/UK-GeoJSON. Contains OS data © Crown copyright and database right.</p></div>`;}
+
+/* ---------------- Network ---------------- */
+const hseed=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const FN=['A.','J.','M.','R.','S.','T.','K.','L.'],SN=['Calder','Marlow','Fenwick','Garrow','Hollin','Norbury','Yarrow','Pennine','Thornby'];
+const NET={n:null};
+function graph(c){
+  const r=rng(hseed(c.id)),pk=a=>a[Math.floor(r()*a.length)],pn=()=>st.scope==='internal'?pk(FN)+' '+pk(SN):'M. •••••';
+  const N=[{id:'c',t:'company',l:nm(c).replace(' (demo)','').slice(0,24),x:320,y:210,r:22}],E=[],no=2+Math.floor(r()*2);
+  const L=[];for(let i=0;i<no;i++)L.push({t:i===0&&c.flags[1]?'pep':'officer',l:pn()});L.push({t:'psc',l:pn()});L.push({t:'parent',l:'Parent Holdings'});
+  L.forEach((n,i)=>{const a=-Math.PI/2+i*2*Math.PI/L.length+.3;N.push({id:'n'+i,...n,x:320+Math.cos(a)*135,y:210+Math.sin(a)*135,r:14,a});E.push(['c','n'+i,n.t==='parent'?'owns 60%':n.t==='psc'?'controls':'officer'])});
+  const par=N.find(n=>n.t==='parent');
+  if(c.flags[0]){N.push({id:'j',t:'jur',l:'Policy-listed jurisdiction',x:par.x+Math.cos(par.a+.45)*70,y:par.y+Math.sin(par.a+.45)*70,r:12});E.push([par.id,'j','registered in'])}
+  if(c.flags[2]){const corr=r()<.5;N.push({id:'s',t:'sanction',l:'Sanctions-list entity',x:par.x+Math.cos(par.a-.45)*70,y:par.y+Math.sin(par.a-.45)*70,r:13,corr});E.push([par.id,'s','linked to'])}
+  return{N,E,c};}
+const ev=(g,n)=>{const c=g.c;
+  if(n.t==='company')return[`<b>${esc(nm(c))}</b>`,`${c.sector} · ${c.status} · ${c.age} yrs · ${esc(GEO.lads[c.lad].n)}`,`Late filings: ${c.late??'unknown'} · officer changes: ${c.officers}`,`Model score ${c.score} (${stage(c)})`,'<span class="note">Source: Companies House profile, filing history, officers (kyb_ingest.companies_house)</span>'];
+  if(n.t==='pep')return[`<b>${esc(n.l)}</b> · officer`,'Politically exposed person: <span class="chip good">corroborated</span>','Name match plus birth-year match against the PEP dataset','<span class="note">Rule: a name hit alone stays a candidate (kyb_ingest.matching.corroborate)</span>'];
+  if(n.t==='officer'||n.t==='psc')return[`<b>${esc(n.l)}</b> · ${n.t==='psc'?'person with significant control':'officer'}`,'No sanctions or PEP candidates above the 0.88 name threshold','<span class="note">Screened against the UK sanctions list and PEP index</span>'];
+  if(n.t==='parent')return[`<b>Parent Holdings (demo)</b>`,'Corporate person with significant control','Ownership 25–75%','<span class="note">Source: Companies House PSC register; GLEIF parent link where an LEI exists</span>'];
+  if(n.t==='jur')return[`<b>Registered in a policy-listed jurisdiction</b>`,'Flag raised from the dated jurisdiction policy file','<span class="note">The list is a policy you define and cite (UK high-risk third countries, FATF), not a data feed</span>'];
+  return[`<b>Sanctions-list entity</b>`,n.corr?'Status: <span class="chip good">corroborated</span> · registration number match':'Status: <span class="chip warn">unresolved candidate</span> · name match only',n.corr?'Counts as a flag':'Kept as unknown until corroborated, never silently set to 0 or 1','<span class="note">kyb_ingest.opensanctions.flag_from_candidates</span>'];};
+function vNetwork(){
+  const opts=D.cases.filter(match).slice(0,60);if(!byId[st.sel]||!opts.some(c=>c.id===st.sel)&&opts.length)st.sel=opts[0]?.id||D.cases[0].id;
+  const c=byId[st.sel],g=graph(c);NET.g=g;NET.n=g.N[0];
+  const col={company:'--accent',officer:'--info',psc:'--info',pep:'--warn',parent:'--good',jur:'--warn',sanction:'--bad'};
+  return `<div class="graph"><div class="card"><div class="hd"><div><div class="lab">Ownership and officer network</div><div class="small">Simulated links for a synthetic case</div></div>
+   <select id="nsel" aria-label="Case">${opts.map(o=>`<option value="${o.id}" ${o.id===st.sel?'selected':''}>${esc(nm(o).replace(' (demo)',''))} · ${o.score}</option>`).join('')}</select></div>
+   <svg id="net" viewBox="0 0 640 420" style="width:100%;height:auto;display:block" role="img" aria-label="Network graph">
+   ${g.E.map(([a,b,l])=>{const A=g.N.find(n=>n.id===a),B=g.N.find(n=>n.id===b);return `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="var(--line)" stroke-width="1.5"/><text class="halo" x="${(A.x+B.x)/2}" y="${(A.y+B.y)/2-4}" font-size="9.5" fill="var(--muted)" text-anchor="middle">${l}</text>`}).join('')}
+   ${g.N.map(n=>`<g data-n="${n.id}" style="cursor:pointer"><circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="var(${col[n.t]})" fill-opacity=".9" stroke="var(--panel)" stroke-width="2.5"/><text class="halo" x="${n.x}" y="${n.y+n.r+14}" font-size="11" text-anchor="middle" fill="var(--fg)">${esc(n.l)}</text></g>`).join('')}</svg>
+   <div class="legend" style="padding:0 18px 14px">${[['company','Company'],['officer','Officer or PSC'],['pep','PEP'],['parent','Corporate owner'],['jur','Jurisdiction'],['sanction','Sanctions entity']].map(([k,l])=>`<span><i style="background:var(${col[k]})"></i>${l}</span>`).join('')}</div></div>
+   <div class="card"><div class="hd"><div class="lab">Evidence</div></div><div class="pad" id="evp" style="display:grid;gap:10px">${ev(g,g.N[0]).map(x=>`<div>${x}</div>`).join('')}</div></div></div>`;}
+
+/* ---------------- Models ---------------- */
+function vModels(){
+  const P=D.paper,mx=.36,W=560,rows=D.models.map((m,i)=>{const y=14+i*44,w=m.ap/mx*(W-210);return `<text x="0" y="${y+13}" font-size="12.5" fill="var(--fg)">${m.name}</text><rect x="190" y="${y}" width="${w}" height="18" fill="${i===0?'var(--muted)':'var(--accent)'}" fill-opacity="${i===0?.6:.85}" rx="2"/><text x="${196+w}" y="${y+13}" font-size="12" fill="var(--fg)">${m.ap.toFixed(3)}</text>`}).join('');
+  const bx=190+D.prevalence/mx*(W-210);
+  const chk=[['P1','Accuracy misleads under imbalance',`Flag-nothing classifier scores ${pct(P.acc_null,1)} accuracy; logistic regression ${pct(P.acc_lr,1)} at 0.5`,'good','Supported'],
+   ['P2','Imbalance handling helps','Weighting, over- and undersampling move AP by about 0.02, small next to the ±0.1 uncertainty in model comparisons','warn','Inconclusive'],
+   ['P3','Supervised beats unsupervised',`Logistic ${P.lr_ap.toFixed(3)} vs isolation forest ${P.iso_ap.toFixed(3)}; intervals include zero`,'warn','Inconclusive'],
+   ['P4','Interpretable and post-hoc agree',`Feature-rank agreement (Spearman) logistic vs EBM ${P.sp_ebm.toFixed(2)}`,'good','Supported'],
+   ['P5','Ranking metrics ignore calibration',`Mean predicted risk ${pct(P.mean_pred,0)} vs ${pct(D.prevalence,1)} observed; Brier ${P.brier.toFixed(3)} vs ${P.brier_const.toFixed(3)} for a constant forecast`,'bad','Warning']];
+  return `<div class="grid g2"><div class="card"><div class="hd"><div><div class="lab">Holdout average precision</div><div class="small">Higher is better · dashed line is a random ranking (${pct(D.prevalence,1)})</div></div></div>
+   <div class="pad"><svg viewBox="0 0 ${W} 240" style="width:100%;height:auto" role="img" aria-label="Bar chart of holdout average precision">${rows}<line x1="${bx}" x2="${bx}" y1="4" y2="226" stroke="var(--fg)" stroke-dasharray="4 3" stroke-width="1"/><text x="${bx+4}" y="236" font-size="10.5" fill="var(--muted)">random</text></svg></div>
+   <div class="scroll"><table><thead><tr><th>Model</th><th>ROC AUC</th><th>Precision at ${D.capacity}</th><th>Recall at ${D.capacity}</th><th>Δ AP vs rules, 95% CI</th></tr></thead><tbody>
+   ${D.models.map(m=>`<tr><td>${m.name}</td><td>${m.auc.toFixed(3)}</td><td>${pct(m.prec)}</td><td>${pct(m.rec)}</td><td>${m.ci?`[${m.ci[0].toFixed(2)}, ${m.ci[1].toFixed(2)}]`:'reference'}</td></tr>`).join('')}</tbody></table></div>
+   <p class="note" style="padding:12px 18px">Every interval includes zero: no model reliably beats the rules scorecard on ${D.positives} holdout positives. Training labels come from the scorecard, so cross-validation scores are circular.</p></div>
+   <div class="card"><div class="hd"><div><div class="lab">Paper checks</div><div class="small">Jensen &amp; Iosifidis (2023), tested here</div></div></div>
+   ${chk.map(([a,t,d,c,v])=>`<div class="sig"><i style="background:var(--${c==='good'?'good':c})"></i><div><b>${a} · ${t} <span class="chip ${c}">${v}</span></b><small>${d}</small></div></div>`).join('')}</div></div>`;}
+
+/* ---------------- Vault ---------------- */
+let SRC='all';
+function vVault(){
+  const S=D.sources.filter(s=>SRC==='all'||s.status===SRC),cts={};D.sources.forEach(s=>cts[s.status]=(cts[s.status]||0)+1);
+  const cls={implemented:'good',planned:'info',manual:'warn',deferred:'',excluded:'bad'};
+  return `<div class="grid g2"><div class="card"><div class="hd"><div><div class="lab">Data sources</div><div class="small">UK KYC, KYB and AML landscape · ${D.sources.length} sources</div></div>
+   <select id="sf" aria-label="Filter by status"><option value="all">All statuses</option>${Object.keys(cts).map(k=>`<option value="${k}" ${SRC===k?'selected':''}>${k} (${cts[k]})</option>`).join('')}</select></div>
+   <div class="scroll"><table><thead><tr><th>Source</th><th>Layer</th><th>Status</th><th>Feeds</th></tr></thead><tbody>${S.map(s=>`<tr><td><b style="font:500 14px var(--serif)">${esc(s.source)}</b><br><small style="color:var(--muted)">${esc(s.access)}</small></td><td>${esc(s.layer)}</td><td><span class="chip ${cls[s.status]}">${s.status}</span></td><td>${esc(s.maps_to)}</td></tr>`).join('')}</tbody></table></div></div>
+   <div style="display:grid;gap:16px;align-content:start"><div class="card pad"><div class="lab">Access scope</div><p class="note" style="margin:6px 0 10px">Each session sees its own scoped view. Non-internal scopes see masked company names across every view.</p>
+    <div class="seg" role="group" aria-label="Scope">${['internal','partner','regulator'].map(s=>`<button data-act="scope" data-s="${s}" aria-pressed="${st.scope===s}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div></div>
+   <div class="card"><div class="hd"><div class="lab">Audit trail</div></div>${st.log.slice(0,9).map(l=>`<div class="sig"><i style="background:var(--${l.a==='Refused read'?'bad':'info'})"></i><div><b>${l.a} <span class="chip">${l.who}</span></b><small>${l.t} · ${esc(l.d)}</small></div></div>`).join('')}</div></div></div>`;}
+
+/* ---------------- Router and events ---------------- */
+const V={dashboard:[vDashboard],map:[vMap,mountMap],cases:[vCases],network:[vNetwork],models:[vModels],vault:[vVault]};
+function render(){const v=VIEWS.find(x=>x[0]===st.view);$('#ttl').textContent=v[1];$('#sub').textContent=v[2];
+  $('#nav').innerHTML=VIEWS.map(([k,l])=>`<button data-go="${k}" ${k===st.view?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('');
+  const el=$('#view');el.className='view'+(st.view==='map'?' flush':'');el.innerHTML=V[st.view][0]();V[st.view][1]&&V[st.view][1]();el.scrollTop=0;}
+function go(v){if(!V[v])v='dashboard';st.view=v;if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);render()}
+const csv=()=>['id,name,sector,score,stage,jurisdiction,pep,sanctions',...D.cases.filter(match).map(c=>[c.id,'"'+nm(c)+'"',c.sector,c.score,stage(c),...c.flags].join(','))].join('\n');
+function copy(txt,ok){const fb=()=>{const m=$('#toast');m.hidden=false;m.innerHTML='Clipboard blocked. Select and copy:<textarea class="csv" readonly></textarea>';const t=m.querySelector('textarea');t.value=txt;t.select()};
+  try{navigator.clipboard.writeText(txt).then(()=>toast(ok),fb)}catch(e){fb()}}
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
+  const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,id=b.dataset.id;
+  if(a==='csv'){log('Export','Case list CSV copied');copy(csv(),'CSV copied to clipboard')}
+  else if(a==='mv'){const c=byId[id],i=STAGES.findIndex(s=>s[0]===stage(c))+(+b.dataset.d);if(i>=0&&i<5){st.moves[id]=STAGES[i][0];save();log('Stage change',c.id+' to '+STAGES[i][1]);render()}}
+  else if(a==='net'){st.sel=id;go('network')}
+  else if(a==='pin'){MAP.sel=id;MAP.as=null;st.sel=id;go('map')}
+  else if(a==='scope'){st.scope=b.dataset.s;log('Scope change','Session scope set to '+st.scope);render()}
+  else if(a==='zi')zoom(1.6);else if(a==='zo')zoom(1/1.6);else if(a==='zf')fitVB();
+  else if(a==='area'){MAP.area=!MAP.area;$('#areabtn').classList.toggle('on',MAP.area);$('#svg').classList.toggle('area',MAP.area);if(!MAP.area)$('#gs').setAttribute('display','none')}
+  else if(a==='clear'){MAP.as=null;MAP.sel=null;$('#gs').setAttribute('display','none');paintPins();side()}
+  else if(a==='copyids')copy(MAP.as.ids.join('\n'),'Case IDs copied');
+});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.l){MAP.L[t.dataset.l]=t.checked;paintAll()}else if(t.id==='mode'){MAP.mode=t.value;paintAll()}
+  else if(t.id==='stg'){MAP.stage=t.value;paintAll();side()}else if(t.dataset.f!==undefined){MAP.f[+t.dataset.f]=t.checked;paintAll();side()}
+  else if(t.id==='min'){side()}else if(t.id==='nsel'){st.sel=t.value;render()}else if(t.id==='sf'){SRC=t.value;render()}});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='min'){MAP.min=+t.value;paintAll();t.nextElementSibling.textContent=t.value}
+  else if(t.id==='q'){st.q=t.value;if(st.view==='map'){paintAll();side();st.q?fitTo(MAP.f_):fitVB()}else render()}});
+document.addEventListener('pointerdown',e=>{const n=e.target.closest('#net g[data-n]');if(!n)return;const nd=NET.g.N.find(x=>x.id===n.dataset.n);$('#evp').innerHTML=ev(NET.g,nd).map(x=>`<div>${x}</div>`).join('')});
+addEventListener('hashchange',()=>go(location.hash.slice(1)));
+addEventListener('resize',()=>{if(st.view==='map'&&MAP.vb){fitVB()}});
+go(location.hash.slice(1)||'dashboard');
+})();
+</script>
