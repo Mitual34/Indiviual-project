@@ -82,7 +82,7 @@ button{cursor:pointer}
 .cc{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--c,var(--line));border-radius:3px;padding:10px 12px;margin-bottom:10px}
 .cc .tp{display:flex;justify-content:space-between;align-items:center} .cc b{font:500 15px var(--serif);display:block;margin:6px 0 2px} .cc p{margin:4px 0 8px;color:var(--muted);font-size:12px}
 .acts{display:flex;gap:6px;margin-top:8px} .acts button{border:1px solid var(--line);background:var(--panel);border-radius:3px;width:30px;height:28px;padding:0}
-.acts button:hover{border-color:var(--accent)} .acts button:disabled{opacity:.35;cursor:default}
+.acts button.btn{width:auto;height:auto;padding:6px 12px} .acts button:hover{border-color:var(--accent)} .acts button:disabled{opacity:.35;cursor:default}
 .split{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:minmax(0,1fr);min-height:0}
 .mapwrap{position:relative;min-width:0;min-height:320px;background:var(--panel2);overflow:hidden}
 .mapwrap svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab} .mapwrap svg.area{cursor:crosshair} .mapwrap svg{user-select:none;-webkit-user-select:none}
@@ -152,10 +152,10 @@ const log=(a,d)=>{st.log.unshift({t:new Date().toTimeString().slice(0,8),who:({i
 const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)};
 const cnt=s=>D.cases.filter(c=>stage(c)===s).length;
 const ICON={dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
- lookup:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',cases:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+ config:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',lookup:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',cases:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
  network:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="m8 7 8 1M7 8l4 8M17 10l-4 6"/>',
  models:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',vault:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'};
-const VIEWS=[['dashboard','Dashboard','Case screening'],['map','Map','Registered offices and shared addresses'],['cases','Cases','Review pipeline'],['lookup','Lookup','Live Companies House check'],['network','Network','Ownership and officer links'],['models','Models','Scoring methods on the holdout'],['vault','Vault','Sources, scopes and audit']];
+const VIEWS=[['dashboard','Dashboard','Case screening'],['map','Map','Registered offices and shared addresses'],['cases','Cases','Review pipeline'],['lookup','Lookup','Live Companies House check'],['network','Network','Ownership and officer links'],['models','Models','Scoring methods on the holdout'],['vault','Vault','Sources, scopes and audit'],['config','Settings','API keys, reference lists and options']];
 
 /* ---------------- Dashboard ---------------- */
 function vDashboard(){
@@ -341,7 +341,7 @@ function vVault(){
 
 
 /* ---------------- Live lookup (needs the local server: python ui/serve.py) ---------------- */
-const LK={status:null,res:null,list:null,busy:false,err:null,pins:[],focus:null};
+const LK={oc:null,status:null,res:null,list:null,busy:false,err:null,pins:[],focus:null};
 const project=(lat,lon)=>{const P=GEO.proj;return{x:(lon-P.minx)*P.cosl*P.K+P.off,y:(P.maxy-lat)*P.K+P.off}};
 async function api(path){const r=await fetch(path,{headers:{accept:'application/json'}});let b={};try{b=await r.json()}catch(e){}if(!r.ok)throw new Error(b.error||('Request failed ('+r.status+')'));return b}
 function vLookup(){return `<div class="grid g2"><div style="display:grid;gap:16px;align-content:start;min-width:0">
@@ -355,7 +355,7 @@ function lkPaint(){
   const S=LK.status||{mode:'checking'},el=$('#lkside'),out=$('#lkout');if(!el||!out)return;
   const yn=(v,l)=>`<div class="opt"><span class="chip ${v?'good':''}">${v?'loaded':'not loaded'}</span> ${l}</div>`;
   el.innerHTML=`<div class="lab">Server</div><p style="margin:8px 0"><span class="chip ${S.mode==='live'?'good':S.mode==='fake'?'warn':S.mode==='unavailable'?'bad':''}">${S.mode==='fake'?'demo company only':S.mode}</span></p>
-   ${S.mode==='unavailable'?'<p class="note">The local server was not detected. This page needs it for live lookups. Run <b>python ui/serve.py</b> from the repository folder and open the address it prints.</p>':S.mode==='off'?'<p class="note">The server is running without an API key. Restart it and enter a Companies House key when asked.</p>':S.mode==='fake'?'<p class="note">Fictional company 00000001 only. Start without <b>--fake</b> to use the live register.</p>':''}
+   ${S.mode==='unavailable'?'<p class="note">The local server was not detected. This page needs it for live lookups. Run <b>python ui/serve.py</b> from the repository folder, open the address it prints, then add your key in Settings.</p>':S.mode==='off'?'<p class="note">The server is running without an API key. <button class="link" data-go="config">Add your Companies House key in Settings →</button></p>':S.mode==='fake'?'<p class="note">Fictional company 00000001 only. Start without <b>--fake</b> to use the live register.</p>':''}
    ${S.mode&&S.mode!=='unavailable'&&S.mode!=='checking'?yn(S.sanctions,'Sanctions list')+yn(S.peps,'PEP list')+yn(S.policy,'Jurisdiction policy')+yn(S.geocode,'Postcode lookup (map pins)'):''}
    <p class="note" style="margin-top:10px">Unloaded sources leave their flag as <b>unknown</b>, never clear. Your API key stays in the server process and is never sent to this page.</p>`;
   let h='';
@@ -363,6 +363,7 @@ function lkPaint(){
   else if(LK.err)h=`<div class="card pad" style="border-color:var(--bad)"><b style="color:var(--bad)">${esc(LK.err)}</b></div>`;
   else if(LK.list)h=`<div class="card"><div class="hd"><div class="lab">${LK.list.length} match${LK.list.length===1?'':'es'}</div></div>${LK.list.map(i=>`<div class="row"><div class="t"><b>${esc(i.name||'')}</b><small>${esc(i.number||'')} · ${esc(i.status||'')} · ${esc(i.address||'')}</small></div><button class="btn" data-act="lkgo" data-n="${esc(i.number)}">Open</button></div>`).join('')||'<div class="row small">No companies found.</div>'}</div>`;
   else if(LK.res)h=lkResult(LK.res);
+  if(LK.list&&LK.oc&&!LK.busy&&!LK.err)h+=`<div class="card" style="margin-top:16px"><div class="hd"><div class="lab">Other registries · OpenCorporates</div></div>${LK.oc.map(i=>`<div class="row"><div class="t"><b>${esc(i.name||'')}</b><small>${esc(i.number||'')} · ${esc(i.jurisdiction||'')} · ${esc(i.status||'')}</small></div></div>`).join('')||'<div class="row small">No matches.</div>'}</div>`;
   else h='<div class="card pad small">Search for a company to see its registry facts, flags and officers here.</div>';
   out.innerHTML=h;}
 function flagCell(f,label){return f==null?'<span class="chip">unknown</span>':f?`<span class="chip bad">${label||'flag'}</span>`:'<span class="chip good">clear</span>'}
@@ -384,15 +385,64 @@ function lkResult(r){const w=r.row,p=r.profile,hits=(k)=>(w[k]||[]).map(x=>`<div
   <div class="card" style="margin-top:16px"><div class="hd"><div class="lab">Persons with significant control</div></div><div class="scroll"><table><thead><tr><th>Name</th><th>Kind</th><th>Control</th><th>Country</th></tr></thead><tbody>
    ${r.pscs.map(o=>`<tr><td>${esc(o.name||'')}</td><td>${esc(o.kind||'')}</td><td>${esc((o.control||[]).join('; '))}</td><td>${esc(o.country||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="note">None registered.</td></tr>'}</tbody></table></div></div>`}
 async function lkRun(q){q=q.trim();if(!q)return;LK.busy=true;LK.err=null;LK.list=null;LK.res=null;lkPaint();
-  try{if(/^[A-Za-z0-9]{6,8}$/.test(q)&&/\d/.test(q))await lkLoad(q);else{LK.list=(await api('/api/search?q='+encodeURIComponent(q))).items}}
+  try{if(/^[A-Za-z0-9]{6,8}$/.test(q)&&/\d/.test(q))await lkLoad(q);else{LK.oc=null;LK.list=(await api('/api/search?q='+encodeURIComponent(q))).items;if(LK.status&&LK.status.opencorporates){try{LK.oc=(await api('/api/oc?q='+encodeURIComponent(q))).items}catch(e){LK.oc=[]}}}}
   catch(e){LK.err=e.message==='Failed to fetch'?'Could not reach the local server. Run python ui/serve.py and open the address it prints.':e.message}
   LK.busy=false;lkPaint();}
 async function lkLoad(n){const r=await api('/api/company/'+encodeURIComponent(n));LK.res=r;LK.list=null;
   if(r.geo){const pt=project(r.geo.lat,r.geo.lon);LK.pins=LK.pins.filter(p=>p.number!==r.profile.number).concat([{number:r.profile.number,name:r.profile.name,office:r.profile.office,...pt}])}
   log('Live lookup',r.profile.number+' checked ('+r.mode+')')}
 
+
+/* ---------------- Settings (keys are sent only to the local server, never stored in this page) ---------------- */
+const CF={draft:null,s:null,unavailable:false,msg:null,err:null,test:null,busy:null};
+async function post(path,body){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-KYB-OS':'1'},body:JSON.stringify(body||{})});let b={};try{b=await r.json()}catch(e){}if(!r.ok)throw new Error(b.error||('Request failed ('+r.status+')'));return b}
+function vConfig(){return '<div id="cfroot"></div>'}
+async function mountConfig(){cfPaint();try{CF.s=await api('/api/settings');CF.unavailable=false}catch(e){CF.s=null;CF.unavailable=true}cfPaint()}
+function cfPaint(){const root=$('#cfroot');if(!root)return;const S=CF.s;
+  if(CF.unavailable)return root.innerHTML=`<div class="card pad" style="max-width:640px"><div class="lab">Local server not detected</div><p style="margin:10px 0">Settings are saved by the local server, so this page has to be opened from it.</p><p class="note">Run <b>python ui/serve.py</b> from the repository folder, then open the address it prints (http://localhost:8000/kyb_os.html#config).</p></div>`;
+  if(!S)return root.innerHTML='<div class="card pad small">Loading…</div>';
+  setTimeout(()=>{if(CF.draft){const a=$('#ch-key'),o=$('#oc-key');if(a)a.value=CF.draft.ch||'';if(o)o.value=CF.draft.oc||''}},0);
+  const busy=a=>CF.busy===a?' disabled':'',chip=(ok,t,f)=>`<span class="chip ${ok?'good':''}">${ok?t:f}</span>`;
+  const lst=(k,l)=>`<div style="margin-top:12px"><label class="lab" for="cf-${k}">${l}</label><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="cf-${k}" class="sel" style="flex:1;min-width:180px" value="${esc(S.lists[k].path)}" placeholder="Full path to a .csv file" autocomplete="off"><button class="btn" data-act="cflist" data-k="${k}"${busy('cflist')}>Load</button>${S.lists[k].path?`<button class="btn" data-act="cflist" data-k="${k}" data-clear="1">Remove</button>`:''}</div><div style="margin-top:6px">${chip(S.lists[k].loaded,'loaded','not loaded')}${S.errors[k]?` <span class="note" style="color:var(--bad)">${esc(S.errors[k])}</span>`:''}</div></div>`;
+  const t=CF.test;
+  root.innerHTML=`<div style="display:grid;gap:16px;max-width:760px">
+   ${CF.msg?`<div class="card pad" style="border-color:var(--${CF.test&&!CF.test.ok?'warn':'good'})"><b style="color:var(--${CF.test&&!CF.test.ok?'warn':'good'})">${esc(CF.msg)}</b></div>`:''}${CF.err?`<div class="card pad" style="border-color:var(--bad)"><b style="color:var(--bad)">${esc(CF.err)}</b></div>`:''}
+   <div class="card pad"><div class="lab">Companies House</div><p class="note" style="margin:8px 0">REST API key from developer.company-information.service.gov.uk (Manage applications, then your key). Used for company, officer, filing and ownership lookups.</p>
+    <div>${chip(S.companies_house.set,'Key set '+(S.companies_house.hint||'(from environment)'),'No key set')} ${S.companies_house.source?`<span class="note">${S.companies_house.source}</span>`:''}${S.errors.companies_house?` <span class="note" style="color:var(--bad)">${esc(S.errors.companies_house)}</span>`:''}</div>
+    <label class="lab" for="ch-key" style="display:block;margin-top:12px">API key</label>
+    <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="ch-key" class="sel" type="password" style="flex:1;min-width:200px" placeholder="Paste key" autocomplete="off" spellcheck="false"><button class="btn" type="button" data-act="cfshow" aria-label="Show or hide the key">Show</button></div>
+    <div class="acts" style="margin-top:12px;flex-wrap:wrap"><button class="btn on" style="width:auto;height:auto" data-act="cfsave-ch"${busy('cfsave-ch')}>Save and test</button><button class="btn" style="width:auto;height:auto" data-act="cftest"${busy('cftest')}>Test connection</button>${S.companies_house.set&&S.companies_house.source==='saved'?'<button class="btn" style="width:auto;height:auto" data-act="cfrm-ch">Remove key</button>':''}</div>
+    ${t?`<div class="note" style="margin-top:12px;padding:10px 12px;border:1px solid var(--${t.ok?'good':'bad'});border-radius:3px"><b style="color:var(--${t.ok?'good':'bad'})">${t.ok?'Connected':'Not working'}${t.status?' · HTTP '+t.status:''}</b><br>${esc(t.message)}</div>`:''}</div>
+   <div class="card pad"><div class="lab">OpenCorporates (optional)</div><p class="note" style="margin:8px 0">Adds other-jurisdiction name matches to Lookup. Check OpenCorporates' access terms for your use.</p>
+    <div>${chip(S.opencorporates.set,'Token set '+S.opencorporates.hint,'No token set')}</div>
+    <label class="lab" for="oc-key" style="display:block;margin-top:12px">API token</label><div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><input id="oc-key" class="sel" type="password" style="flex:1;min-width:200px" placeholder="Paste token" autocomplete="off" spellcheck="false"><button class="btn" data-act="cfsave-oc"${busy('cfsave-oc')}>Save</button>${S.opencorporates.set?'<button class="btn" data-act="cfrm-oc">Remove</button>':''}</div></div>
+   <div class="card pad"><div class="lab">Reference lists</div><p class="note" style="margin:8px 0">Paths on the computer running the server. Without them, sanctions, PEP and jurisdiction flags stay <b>unknown</b>.</p>
+    ${lst('sanctions','Sanctions list (OpenSanctions targets CSV)')}${lst('peps','PEP list (OpenSanctions PEP CSV)')}${lst('policy','Jurisdiction policy (country, list_name, effective_from, effective_to)')}</div>
+   <div class="card pad"><div class="lab">Options</div>
+    <label class="opt" style="margin-top:10px"><input type="checkbox" id="cf-geo" ${S.geocode?'checked':''}> Find map pins from registered postcodes (calls api.postcodes.io)</label>
+    <label class="opt"><input type="checkbox" id="cf-rem" ${S.remembered?'checked':''}> Remember keys and paths on this computer</label>
+    <p class="note">Remembering writes a <b>plain-text</b> file at ${esc(S.store_path)}. Leave it off on shared computers. Keys are otherwise kept in the server's memory until you stop it.</p>
+    <div class="acts"><button class="btn" style="width:auto;height:auto" data-act="cfopt"${busy('cfopt')}>Apply options</button><button class="btn" style="width:auto;height:auto" data-act="cfforget">Forget everything</button></div></div></div>`;}
+async function cfAct(a,b){
+  if(a==='cfshow'){const i=$('#ch-key');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Show':'Hide';return}
+  const V={ch:$('#ch-key')?$('#ch-key').value.trim():'',oc:$('#oc-key')?$('#oc-key').value.trim():'',rem:$('#cf-rem')?$('#cf-rem').checked:false,geo:$('#cf-geo')?$('#cf-geo').checked:true,path:b.dataset.k&&$('#cf-'+b.dataset.k)?$('#cf-'+b.dataset.k).value.trim():''};
+  CF.msg=CF.err=null;CF.draft=null;CF.busy=a;cfPaint();
+  try{
+    const rem=V.rem;
+    if(a==='cfsave-ch'){const v=V.ch;if(!v)throw new Error('Paste your key first.');CF.s=await post('/api/settings',{companies_house_key:v,remember:rem});CF.test=await post('/api/test');CF.msg=CF.test.ok?'Key saved and working.':'Key saved, but the test failed. See below.'}
+    else if(a==='cftest'){CF.test=await post('/api/test')}
+    else if(a==='cfrm-ch'){CF.s=await post('/api/settings',{companies_house_key:'',remember:rem});CF.test=null;CF.msg='Key removed.'}
+    else if(a==='cfsave-oc'){const v=V.oc;if(!v)throw new Error('Paste your token first.');CF.s=await post('/api/settings',{opencorporates_token:v,remember:rem});CF.msg='Token saved.'}
+    else if(a==='cfrm-oc'){CF.s=await post('/api/settings',{opencorporates_token:'',remember:rem});CF.msg='Token removed.'}
+    else if(a==='cflist'){const k=b.dataset.k,v=b.dataset.clear?'':V.path;CF.s=await post('/api/settings',{[k+'_path']:v,remember:rem});CF.msg=v?'List loaded.':'List removed.'}
+    else if(a==='cfopt'){CF.s=await post('/api/settings',{geocode:V.geo,remember:rem});CF.msg=rem?'Options applied. Settings are remembered on this computer.':'Options applied.'}
+    else if(a==='cfforget'){CF.s=await post('/api/settings',{forget:true});CF.test=null;CF.msg='All keys, paths and the saved file were removed.'}
+    log('Settings',a.replace('cf','')+' by user');LK.status=null;LK.res=null;LK.list=null;
+  }catch(e){CF.draft={ch:V.ch,oc:V.oc};CF.err=e.message==='Failed to fetch'?'Could not reach the local server. Is python ui/serve.py still running?':e.message}
+  CF.busy=null;cfPaint();}
+
 /* ---------------- Router and events ---------------- */
-const V={dashboard:[vDashboard],map:[vMap,mountMap],cases:[vCases],lookup:[vLookup,mountLookup],network:[vNetwork],models:[vModels],vault:[vVault]};
+const V={dashboard:[vDashboard],map:[vMap,mountMap],cases:[vCases],lookup:[vLookup,mountLookup],config:[vConfig,mountConfig],network:[vNetwork],models:[vModels],vault:[vVault]};
 function render(){const v=VIEWS.find(x=>x[0]===st.view);$('#ttl').textContent=v[1];$('#sub').textContent=v[2];
   $('#nav').innerHTML=VIEWS.map(([k,l])=>`<button data-go="${k}" ${k===st.view?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('');
   const el=$('#view');el.className='view'+(st.view==='map'?' flush':'');el.innerHTML=V[st.view][0]();V[st.view][1]&&V[st.view][1]();el.scrollTop=0;}
@@ -408,6 +458,7 @@ document.addEventListener('click',e=>{
   else if(a==='net'){st.sel=id;go('network')}
   else if(a==='pin'){MAP.sel=id;MAP.as=null;st.sel=id;go('map')}
   else if(a==='scope'){st.scope=b.dataset.s;log('Scope change','Session scope set to '+st.scope);render()}
+  else if(a.startsWith('cf')&&a!=='cfsave')cfAct(a,b);
   else if(a==='lkgo'){LK.busy=true;LK.err=null;lkPaint();lkLoad(b.dataset.n).catch(e=>LK.err=e.message).finally(()=>{LK.busy=false;lkPaint()})}
   else if(a==='lkmap'){LK.focus=LK.res.profile.number;MAP.sel=null;MAP.as=null;go('map')}
   else if(a==='zi')zoom(1.6);else if(a==='zo')zoom(1/1.6);else if(a==='zf')fitVB();

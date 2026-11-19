@@ -1,0 +1,10 @@
+requests
+scipy
+scikit-learn
+xgboost
+interpret-core
+pandas
+numpy
+matplotlib
+shapely
+pytest

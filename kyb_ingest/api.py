@@ -18,6 +18,10 @@ class Context:
     policy: object = None
     geocode: object = None          # callable(postcode) -> {"lat","lon"} | None
     mode: str = "off"               # 'live' | 'fake' | 'off'
+    fake: bool = False              # started with --fake: keep the fictional house unless a real key is saved
+    oc_token: str | None = None
+    key_source: str | None = None   # 'saved' | 'environment' | None
+    errors: dict = None             # last problem per component, shown in Settings
 
 
 class CachedHouse:
@@ -33,7 +37,7 @@ class CachedHouse:
 
 
 def status(ctx):
-    return dict(mode=ctx.mode, live=ctx.house is not None, sanctions=ctx.sanctions is not None, peps=ctx.peps is not None,
+    return dict(mode=ctx.mode, opencorporates=bool(ctx.oc_token), live=ctx.house is not None, sanctions=ctx.sanctions is not None, peps=ctx.peps is not None,
                 policy=ctx.policy is not None, geocode=ctx.geocode is not None)
 
 
@@ -80,9 +84,119 @@ def handle(ctx, url):
         if parts[:2] == ["api", "status"]: return 200, status(ctx)
         if parts[:2] == ["api", "search"]: return search(ctx, parse_qs(u.query).get("q", [""])[0])
         if parts[:2] == ["api", "company"] and len(parts) == 3: return company(ctx, parts[2])
+        if parts[:2] == ["api", "oc"]: return oc_search(ctx, parse_qs(u.query).get("q", [""])[0])
     except Exception as e:  # map client/network failures to readable errors, never leak the key
         code = getattr(getattr(e, "response", None), "status_code", None)
         if code in (401, 403): return 502, {"error": "Companies House rejected the API key."}
         if code == 429: return 429, {"error": "Companies House rate limit reached. Wait a minute and retry."}
         return 502, {"error": "Companies House request failed: " + type(e).__name__}
     return 404, {"error": "Unknown endpoint."}
+
+
+# ---------------------------------------------------------------- settings, connection test, other registries
+import os
+from .settings import mask
+
+
+def rebuild(ctx, store):
+    """(Re)create the live pieces from the settings store and environment. Errors are kept in ctx.errors, never raised."""
+    from . import companies_house as ch, fake
+    ctx.errors = {}; key, ctx.key_source = store.data.get("ch"), "saved" if store.data.get("ch") else None
+    if not key and os.environ.get("COMPANIES_HOUSE_API_KEY"): key, ctx.key_source = os.environ["COMPANIES_HOUSE_API_KEY"].strip(), "environment"
+    if key:
+        try: ctx.house, ctx.mode = ch.CompaniesHouse(api_key=key), "live"
+        except ImportError: ctx.house, ctx.mode = None, "off"; ctx.errors["companies_house"] = "The Python package 'requests' is not installed. Run: pip install requests"
+        except Exception as e: ctx.house, ctx.mode = None, "off"; ctx.errors["companies_house"] = type(e).__name__
+    elif ctx.fake: ctx.house, ctx.mode = fake.FakeHouse(), "fake"
+    else: ctx.house, ctx.mode = None, "off"
+    for name, k in (("sanctions", "sanctions_path"), ("peps", "peps_path")):
+        setattr(ctx, name, None); path = store.data.get(k)
+        if path:
+            try:
+                from .opensanctions import SanctionsIndex
+                setattr(ctx, name, SanctionsIndex.from_csv(path, name))
+            except Exception as e: ctx.errors[name] = f"Could not load {path}: {type(e).__name__}"
+    ctx.policy = None
+    if store.data.get("policy_path"):
+        from .jurisdiction import JurisdictionPolicy
+        ctx.policy = JurisdictionPolicy.load(store.data["policy_path"])
+        if ctx.policy is None: ctx.errors["policy"] = "Policy file missing or has no rows."
+    ctx.oc_token = store.data.get("oc")
+    if ctx.mode == "fake": ctx.geocode = fake.fake_geocode
+    elif ctx.mode == "live" and store.data.get("geocode", True):
+        from .http import make_getter, RateLimiter
+        get = make_getter(limiter=RateLimiter(30, 60))
+        def geocode(pc):
+            try:
+                r = get("https://api.postcodes.io/postcodes/" + pc.replace(" ", ""))
+                return {"lat": r["result"]["latitude"], "lon": r["result"]["longitude"]} if r and r.get("result") else None
+            except Exception: return None
+        ctx.geocode = geocode
+    else: ctx.geocode = None
+
+
+def settings_state(ctx, store):
+    d = store.data
+    return dict(mode=ctx.mode, remembered=store.persisted, store_path=str(store.path),
+                companies_house=dict(set=bool(d.get("ch")) or ctx.key_source == "environment", hint=mask(d.get("ch")), source=ctx.key_source),
+                opencorporates=dict(set=bool(d.get("oc")), hint=mask(d.get("oc"))),
+                lists={k: dict(path=d.get(k + "_path", ""), loaded=getattr(ctx, k) is not None) for k in ("sanctions", "peps", "policy")},
+                geocode=bool(d.get("geocode", True)), errors=ctx.errors or {})
+
+
+def apply_settings(ctx, store, body):
+    if not isinstance(body, dict): return 400, {"error": "Expected a JSON object."}
+    patch = {}
+    for field, k in (("companies_house_key", "ch"), ("opencorporates_token", "oc")):
+        v = body.get(field)
+        if v is not None:
+            if not isinstance(v, str) or len(v) > 200 or any(c in v for c in "\r\n "): return 400, {"error": "That key has spaces or line breaks. Paste only the key."}
+            patch[k] = v.strip()
+    for field, k in (("sanctions_path", "sanctions_path"), ("peps_path", "peps_path"), ("policy_path", "policy_path")):
+        v = body.get(field)
+        if v is not None:
+            if not isinstance(v, str) or len(v) > 500: return 400, {"error": "Invalid path."}
+            v = v.strip().strip('"')
+            if v and not v.lower().endswith(".csv"): return 400, {"error": "Reference lists must be .csv files."}
+            if v and not os.path.isfile(v): return 400, {"error": f"File not found: {v}"}
+            patch[k] = v
+    if "geocode" in body: patch["geocode"] = bool(body["geocode"])
+    store.update(**patch)
+    if body.get("forget"): store.forget()
+    elif "remember" in body:
+        if body["remember"]: store.save()
+        else:
+            was = dict(store.data); store.forget(); store.data.update(was)
+    rebuild(ctx, store)
+    return 200, settings_state(ctx, store)
+
+
+def test_connection(ctx):
+    """One cheap authenticated call; returns a readable diagnosis."""
+    if ctx.house is None:
+        return 200, dict(ok=False, status=None, message=(ctx.errors or {}).get("companies_house") or "No Companies House key set. Paste it above and press Save.")
+    if ctx.mode == "fake": return 200, dict(ok=True, status=200, message="Demo mode: no real request was made.")
+    try:
+        r = ctx.house.profile("00445790")
+        return 200, dict(ok=r is not None, status=200 if r else 404, message="Connected. Companies House accepted the key." if r else "Key accepted but the test company was not found.")
+    except ImportError:
+        return 200, dict(ok=False, status=None, message="The Python package 'requests' is not installed. Run: pip install requests")
+    except Exception as e:
+        resp = getattr(e, "response", None); code = getattr(resp, "status_code", None); text = ""
+        try: text = (resp.json() or {}).get("error", "")
+        except Exception: pass
+        hints = {400: "Companies House could not read the key. Paste only the key text, with no quotes or spaces.",
+                 401: "Companies House rejected the key. Use a REST API key (not a stream key) from your registered application.",
+                 403: "Access denied. If the key has a restricted-IP setting, this computer's address must be allowed.",
+                 429: "Rate limit reached. Wait a few minutes."}
+        if code: return 200, dict(ok=False, status=code, message=hints.get(code, "Companies House returned an error.") + (f" ({text})" if text else ""))
+        return 200, dict(ok=False, status=None, message="Could not reach Companies House: " + type(e).__name__ + ". Check your internet connection or proxy.")
+
+
+def oc_search(ctx, q):
+    if not ctx.oc_token: return 503, {"error": "No OpenCorporates token set (Settings)."}
+    q = (q or "").strip()
+    if len(q) < 2 or len(q) > 100: return 400, {"error": "Enter 2 to 100 characters."}
+    from .opencorporates import OpenCorporates
+    items = OpenCorporates(api_token=ctx.oc_token).search(q)
+    return 200, {"items": [dict(name=i.get("name"), number=i.get("company_number"), jurisdiction=i.get("jurisdiction_code"), status=i.get("current_status")) for i in items[:10]]}
