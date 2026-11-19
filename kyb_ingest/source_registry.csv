@@ -1,0 +1,22 @@
+source,layer,status,maps_to,access_note,verified_live
+Companies House REST API,registry,implemented,"age, status, SIC, late filings, officer changes, PSCs",free API key; ~600 req/5 min (unverified),no
+"Companies House bulk (BasicCompanyData, PSC snapshot)",registry,planned,"backtest/universe building, ownership",free download; single snapshot date,no
+"Companies House: disqualified officers, insolvency, charges",registry,planned,director and distress risk,free API (insolvency and charges paths are in the client),no
+Companies House Register of Overseas Entities,ownership,planned,overseas owners of UK property,free,no
+OpenSanctions: UK FCDO sanctions list,sanctions,implemented,sanctions_proximity_flag,free non-commercial; business use needs licence,no
+OpenSanctions: PEP dataset,pep,implemented,pep_flag,same licence note; FCDO list has no PEPs,no
+UK Sanctions List (FCDO) / OFSI list direct,sanctions,planned,primary-source cross-check of OpenSanctions mirror,government publication; confirm which list is current,no
+GDELT DOC 2.0 API,adverse media,implemented,adverse_media_count,free; ~3 month window (unverified); BigQuery GKG for history,no
+OpenCorporates,registry (global),implemented,"foreign registrations, jurisdiction context",token; restricted free use,no
+GLEIF LEI API,ownership (global),implemented,"LEI, direct/ultimate parent",free open data,no
+The Gazette (insolvency and winding-up notices),distress,planned,insolvency events,free API/feeds,no
+FCA Financial Services Register + FCA warning list,regulatory,planned,"authorisation status, clone/unauthorised firms",free API key,no
+HMRC VAT number check,tax identity,planned,VAT registration validity,"free, needs HMRC developer app",no
+HM Land Registry CCOD/OCOD,property ownership,planned,companies/overseas companies owning UK property,"free dataset, licence terms",no
+Charity Commission register,registry,planned,charity/NPO customers,free,no
+UK high-risk third countries (MLR 2017 Sch 3ZA) + FATF lists,jurisdiction policy,planned,"jurisdiction_flag (policy, not data)",official publications; see policy/README.md,no
+SecurityTrails,infrastructure,manual,domain age/shared hosting for shell-company triage,small free tier,no
+Maltego CE,analyst tool,manual,link analysis on flagged cases,not a pipeline source,no
+SpiderFoot,analyst tool,manual,automated OSINT on flagged cases,not a pipeline source,no
+Social Searcher / Reddit search,social,deferred,noisy; individuals' data,UK GDPR review first,no
+Sentinel Hub / Global Fishing Watch / OpenSky,geospatial/maritime/aviation,excluded,only sector-specific site verification,poor fit for UK company screening at scale,no
