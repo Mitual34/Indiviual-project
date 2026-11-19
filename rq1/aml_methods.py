@@ -11,6 +11,7 @@ detectors; `outlier_ensemble` uses rank averaging and says so.
 from __future__ import annotations
 import numpy as np
 from scipy.stats import rankdata, chi2
+from scipy.special import expit
 from sklearn.ensemble import IsolationForest
 from sklearn.svm import OneClassSVM
 from sklearn.mixture import GaussianMixture
@@ -119,13 +120,13 @@ class LogisticRegressionGD:
         w = np.ones(len(y)) if sample_weight is None else np.asarray(sample_weight, float)
         beta = np.zeros(X.shape[1]); P = np.eye(X.shape[1]) * self.l2; P[0, 0] = 0
         for _ in range(self.max_iter):
-            p = 1 / (1 + np.exp(-X @ beta)); g = X.T @ (w * (p - y)) + P @ beta
+            p = expit(X @ beta); g = X.T @ (w * (p - y)) + P @ beta
             H = (X * (w * p * (1 - p))[:, None]).T @ X + P + 1e-10 * np.eye(len(beta))
             step = np.linalg.solve(H, g); beta -= step
             if np.abs(step).max() < self.tol: break
         self.intercept_, self.coef_ = beta[0], beta[1:]; return self
 
-    def predict_proba(self, X): return 1 / (1 + np.exp(-(np.asarray(X, float) @ self.coef_ + self.intercept_)))
+    def predict_proba(self, X): return expit(np.asarray(X, float) @ self.coef_ + self.intercept_)
 
 
 def balanced_weights(y):
