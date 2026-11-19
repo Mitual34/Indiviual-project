@@ -3,7 +3,7 @@ Endpoint paths and the 600-requests/5-minutes limit are from memory and were NOT
 (docs host was unreachable) - confirm at https://developer.company-information.service.gov.uk before live use.
 Auth: API key as the HTTP basic-auth username with an empty password. Key is read from COMPANIES_HOUSE_API_KEY."""
 from __future__ import annotations
-import os, calendar
+import os, sys, calendar, getpass
 from datetime import date, datetime
 from .http import RateLimiter, make_getter
 
@@ -20,11 +20,21 @@ def add_months(d: date, m: int) -> date:
     return date(y, mo + 1, min(d.day, calendar.monthrange(y, mo + 1)[1]))
 
 
+def get_api_key(prompt="Companies House API key (input hidden): ") -> str:
+    """Key from COMPANIES_HOUSE_API_KEY, else a hidden interactive prompt. Never stored or printed."""
+    key = os.environ.get("COMPANIES_HOUSE_API_KEY")
+    if key: return key.strip()
+    if not sys.stdin.isatty():
+        raise RuntimeError("No API key: set COMPANIES_HOUSE_API_KEY or run interactively to be prompted.")
+    key = getpass.getpass(prompt).strip()
+    if not key: raise RuntimeError("Empty API key.")
+    return key
+
+
 class CompaniesHouse:
     def __init__(self, api_key: str | None = None, get=None):
-        key = api_key or os.environ.get("COMPANIES_HOUSE_API_KEY")
         if get is None:
-            if not key: raise RuntimeError("Set COMPANIES_HOUSE_API_KEY or pass get=")
+            key = api_key or get_api_key()
             get = make_getter(auth=(key, ""), limiter=RateLimiter(600, 300))
         self.get = get
 

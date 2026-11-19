@@ -1,7 +1,7 @@
 """Run on YOUR machine: checks the Companies House client against the live API and prints structure only.
-    export COMPANIES_HOUSE_API_KEY=<your key>      (PowerShell: $env:COMPANIES_HOUSE_API_KEY="<your key>")
     python -m kyb_ingest.live_check 00445790
-The key is read from the environment and is never written anywhere by this script."""
+You are prompted for the API key (input hidden). Optionally set COMPANIES_HOUSE_API_KEY to skip the prompt.
+The key is never written anywhere by this script."""
 import sys
 from datetime import date
 from . import companies_house as ch

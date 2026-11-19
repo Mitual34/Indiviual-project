@@ -129,3 +129,15 @@ def test_pep_name_hit_without_birth_year_stays_unknown(tmp_path):
     assert row["pep_flag"] is None and row["pep_status"] == "unresolved_candidate"
     row2 = build_feature_row("12345678", AS_OF, NoDOB(), None, SanctionsIndex.from_csv(write_targets(tmp_path), "peps"), unresolved="negative")
     assert row2["pep_flag"] == 0
+
+
+def test_api_key_prompt_and_env(monkeypatch):
+    monkeypatch.setenv("COMPANIES_HOUSE_API_KEY", " abc ")
+    assert ch.get_api_key() == "abc"
+    monkeypatch.delenv("COMPANIES_HOUSE_API_KEY")
+    monkeypatch.setattr(ch.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr(ch.getpass, "getpass", lambda prompt: "typed-key")
+    assert ch.get_api_key() == "typed-key"
+    monkeypatch.setattr(ch.sys.stdin, "isatty", lambda: False)
+    import pytest
+    with pytest.raises(RuntimeError): ch.get_api_key()
