@@ -7,6 +7,7 @@ META = "Platform · 19 November 2026 · 6 min read"
 INTRO = [
  "Know-your-business work usually lives in a drawer of tools: a registry search in one window, a sanctions screen in another, a spreadsheet of who is waiting for review, and a model score nobody can trace. KYB-OS puts those steps in one console. Every view reads the same set of case records, so a flag raised on one tab shows up on the others, and a case moved in the pipeline changes the count on the dashboard.",
  "KYB-OS is a research prototype built for an individual project on UK KYB, KYC and AML screening. Everything on the demo screens runs over synthetic cases. None of it is customer data, and the scores show that the workflow runs, not how well anything performs on real companies.",
+ "It is aimed at the compliance teams of UK fintech firms, and a section near the end explains where it fits and what a firm would still need to do before relying on anything like it.",
 ]
 TABS_INTRO = ("One console, eight tabs", "The tabs follow the order of the work. Dashboard gives the overview. Map and Lookup answer where a company is and what the register says about it. Cases and Network carry the review itself. Models and Vault hold the evidence and the controls behind it, and Settings connects the platform to its data sources.")
 TABS = [
@@ -44,6 +45,23 @@ TABS = [
   ["Settings connects the platform to the outside world. The user pastes a Companies House API key and presses Save and test, and the page answers in plain language: connected, or the reason it is not, such as a key with stray spaces, a stream key where a REST key is needed, or a blocked IP address. An optional OpenCorporates token sits below it, followed by paths to the sanctions, PEP and jurisdiction-policy files.",
    "Keys go only to the local server. They stay in its memory, never travel back to the page, and show afterwards as the last four characters. A Remember option writes them to a plain-text file on the user's own computer, and Forget everything removes the keys, the paths and that file."]),
 ]
+
+FINTECH = ("Where it helps UK fintech firms", [
+ ("p", "Most UK fintechs that handle money, such as payment and e-money firms, lenders and crypto-asset businesses, fall under the Money Laundering Regulations 2017 and are supervised by the FCA. That means identifying who owns and controls each business customer, assessing the risk each one poses, applying enhanced checks to the riskiest, screening against sanctions lists, and keeping records that show why a decision was made. Fintechs tend to do this with small compliance teams, under pressure to onboard quickly, and with several separate vendors to stitch together."),
+ ("p", "KYB-OS is aimed at that squeeze. Capacity is the central object: the dashboard starts from the number of cases the team can review and ranks the queue to fit it, so scarce hours go to the cases most likely to need them. The unknown-not-clear rule and the corroboration step are designed to address two failures a reviewer fears most, a hit that was silently scored clear and a pile of false alarms from name-only matches. Lookup and Network tie each flag to its source, which is the evidence a firm needs when it explains a decision to its money laundering reporting officer, its auditors or its supervisor."),
+ ("table", ["Tab", "The job it does for a fintech compliance team"], [
+  ["Dashboard", "Sizes the review queue against analyst capacity and shows which flags drive it."],
+  ["Map", "Spots clusters across the customer book, such as many businesses at one registered office."],
+  ["Cases", "Moves customers through screening, review, enhanced due diligence and decision, with a visible stage."],
+  ["Lookup", "Checks a prospective business customer against Companies House at onboarding, with its officers and controllers."],
+  ["Network", "Traces ownership and control to the people behind a business and explains a match."],
+  ["Models", "Compares a transparent rules baseline with learned models before a score is trusted, and checks calibration."],
+  ["Vault", "Records data sources, access scope and an audit trail of who did what."],
+  ["Settings", "Connects the firm's own keys and reference lists, which stay on its own computer."]]),
+ ("p", "Several design choices answer concerns specific to regulated firms. A rules scorecard sits beside the learned models, so a firm can start with a rule set it can explain line by line and adopt a model only if it earns its place. Published work on machine learning for anti-money laundering flags interpretability as a concern for regulated firms, and the Models tab reports how closely interpretable and post-hoc explanations agree. Companies House data is free, so a young firm can try the workflow before it commits to an enterprise screening contract. The prototype also reads OpenSanctions exports, and a commercial firm would need to take out the licence that use requires."),
+ ("h3", "What a firm would still need to do"),
+ ("p", "KYB-OS is a research prototype, not a compliance product. It has not been validated on real customers, nothing in it is legal advice, and it has not been reviewed by the FCA. A firm adopting these ideas would need to test the scoring against its own labelled outcomes, place any model under its model-risk governance, take out the data licences its use requires, handle personal data under UK GDPR, and keep a named person, such as the money laundering reporting officer, accountable for every decision. Several sources that matter to a fintech, such as the Gazette's insolvency notices and the FCA Register, are listed in the registry as planned and are not built yet."),
+])
 OUTRO = [
  ("Why it exists", ["Because every tab reads the same records, the dashboard, the map and the pipeline cannot drift apart. The research behind the prototype points the same way. A published review of machine learning for anti-money laundering splits the field into client risk profiling and suspicious-behaviour flagging, and a scan of six vendors' public pages found their screening and onboarding tools leaning on configurable rules, with machine learning appearing mostly where the data is images or text. KYB-OS puts a transparent rules baseline and four learned models side by side, so the gain, or the lack of one, is visible."]),
  ("What it is, and is not", ["KYB-OS is a research prototype. Every case on the demo screens is synthetic, the map locations and ownership links are simulated, and the scores show that the workflow runs, not how it would perform on real companies. The Companies House, OpenCorporates and postcode calls have not been run against the live services in this build, and 10 of the 21 listed sources are planned and have no code yet. Northern Ireland is missing from the map.",
@@ -54,21 +72,32 @@ e = html.escape
 md = [f"# {TITLE}", "", f"*{DEK}*", "", META, ""] + [p + "\n" for p in INTRO] + [f"## {TABS_INTRO[0]}", "", TABS_INTRO[1], ""]
 for _, name, head, img, cap, paras in TABS:
     md += [f"## {name}: {head}", "", f"![{cap}](img/{img}.jpg)", f"*{cap}*", ""] + [p + "\n" for p in paras]
+md += [f"## {FINTECH[0]}", ""]
+for kind, *a in FINTECH[1]:
+    if kind == "p": md += [a[0], ""]
+    elif kind == "h3": md += [f"### {a[0]}", ""]
+    else: md += ["| " + " | ".join(a[0]) + " |", "|" + "---|" * len(a[0])] + ["| " + " | ".join(r) + " |" for r in a[1]] + [""]
 for h, ps in OUTRO: md += [f"## {h}", ""] + [p + "\n" for p in ps]
 (H / "kyb-os-overview.md").write_text("\n".join(md), encoding="utf-8")
 # ---- html
 def b64(n): return "data:image/jpeg;base64," + base64.b64encode((H / "img" / f"{n}.jpg").read_bytes()).decode()
 body = [f'<p class="kick">{e(META)}</p><h1>{e(TITLE)}</h1><p class="dek">{e(DEK)}</p>'] + [f"<p>{e(p)}</p>" for p in INTRO]
-body.append(f'<h2 class="sec">{e(TABS_INTRO[0])}</h2><p>{e(TABS_INTRO[1])}</p><nav class="tabs" aria-label="Tabs">' + "".join(f'<a href="#tab-{k}">{e(n)}</a>' for k, n, *_ in TABS) + "</nav>")
+body.append(f'<h2 class="sec">{e(TABS_INTRO[0])}</h2><p>{e(TABS_INTRO[1])}</p><nav class="tabs" aria-label="Tabs">' + "".join(f'<a href="#tab-{k}">{e(n)}</a>' for k, n, *_ in TABS) + '<a href="#fintech">UK fintech</a></nav>')
 for k, name, head, img, cap, paras in TABS:
     body.append(f'<section id="tab-{k}"><p class="lab">{e(name)}</p><h2>{e(head)}</h2>' + "".join(f"<p>{e(p)}</p>" for p in paras[:1]) +
                 f'<figure><img src="{b64(img)}" alt="{e(cap)}" loading="lazy"><figcaption>{e(cap)}</figcaption></figure>' + "".join(f"<p>{e(p)}</p>" for p in paras[1:]) + "</section>")
+fb = []
+for kind, *a in FINTECH[1]:
+    if kind == "p": fb.append(f"<p>{e(a[0])}</p>")
+    elif kind == "h3": fb.append(f"<h3>{e(a[0])}</h3>")
+    else: fb.append('<div class="tw"><table><thead><tr>' + "".join(f"<th>{e(c)}</th>" for c in a[0]) + "</tr></thead><tbody>" + "".join("<tr>" + "".join(f"<td>{e(c)}</td>" for c in r) + "</tr>" for r in a[1]) + "</tbody></table></div>")
+body.append(f'<section id="fintech"><p class="lab">UK fintech</p><h2>{e(FINTECH[0])}</h2>' + "".join(fb) + "</section>")
 for h, ps in OUTRO: body.append(f'<section><h2 class="sec">{e(h)}</h2>' + "".join(f"<p>{e(p)}</p>" for p in ps) + "</section>")
 page = """<title>Inside KYB-OS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
 <style>
-/* Concept: a long-form article in the console's own voice. Paper ground, serif body, terracotta for links and labels, one wide figure per tab. */
+/* Concept: a long-form article in the console's own voice. Paper ground, serif body, terracotta for links and labels, one wide figure per tab, and a plain table for the fintech section. */
 :root{--bg:#fbf9f6;--panel:#fffefc;--line:#e5dcd1;--fg:#201b17;--muted:#6c6158;--accent:#b04a27;--accent-soft:#f7e4dc;--serif:'Source Serif 4',Georgia,'Times New Roman',serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171310;--panel:#1f1a16;--line:#3c332b;--fg:#f2ebe3;--muted:#a99d91;--accent:#e98a65;--accent-soft:#3d241b;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#171310;--panel:#1f1a16;--line:#3c332b;--fg:#f2ebe3;--muted:#a99d91;--accent:#e98a65;--accent-soft:#3d241b;color-scheme:dark}
@@ -77,7 +106,8 @@ main{max-width:720px;margin:0 auto} .kick,.lab{font:500 11.5px var(--mono);lette
 h1{font:600 clamp(30px,5vw,44px)/1.12 var(--serif);letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance} .dek{font-size:21px;line-height:1.45;color:var(--muted);margin:0 0 28px}
 h2{font:600 26px/1.25 var(--serif);margin:0 0 12px;text-wrap:balance} h2.sec{margin-top:44px} section{margin-top:56px;padding-top:28px;border-top:1px solid var(--line)} p{margin:0 0 18px}
 .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px} .tabs a{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:3px} .tabs a:hover{border-color:var(--accent);color:var(--accent)}
-figure{margin:24px 0 8px;min-width:0} figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel)} figcaption{font:italic 15px/1.45 var(--serif);color:var(--muted);margin-top:10px}
+figure{margin:24px 0 8px;min-width:0} figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel)} h3{font:600 19px/1.3 var(--serif);margin:28px 0 10px} .tw{overflow-x:auto;margin:6px 0 22px;border:1px solid var(--line);border-radius:3px;background:var(--panel)} table{width:100%;border-collapse:collapse;font-size:16px;line-height:1.45} th{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line)} td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top} td:first-child{font-weight:600;white-space:nowrap}
+figcaption{font:italic 15px/1.45 var(--serif);color:var(--muted);margin-top:10px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 </style>
 <main>""" + "".join(body) + "</main>\n"

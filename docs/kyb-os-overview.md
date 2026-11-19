@@ -8,6 +8,8 @@ Know-your-business work usually lives in a drawer of tools: a registry search in
 
 KYB-OS is a research prototype built for an individual project on UK KYB, KYC and AML screening. Everything on the demo screens runs over synthetic cases. None of it is customer data, and the scores show that the workflow runs, not how well anything performs on real companies.
 
+It is aimed at the compliance teams of UK fintech firms, and a section near the end explains where it fits and what a firm would still need to do before relying on anything like it.
+
 ## One console, eight tabs
 
 The tabs follow the order of the work. Dashboard gives the overview. Map and Lookup answer where a company is and what the register says about it. Cases and Network carry the review itself. Models and Vault hold the evidence and the controls behind it, and Settings connects the platform to its data sources.
@@ -85,6 +87,29 @@ The second is the access-scope switch. Choosing Partner or Regulator masks compa
 Settings connects the platform to the outside world. The user pastes a Companies House API key and presses Save and test, and the page answers in plain language: connected, or the reason it is not, such as a key with stray spaces, a stream key where a REST key is needed, or a blocked IP address. An optional OpenCorporates token sits below it, followed by paths to the sanctions, PEP and jurisdiction-policy files.
 
 Keys go only to the local server. They stay in its memory, never travel back to the page, and show afterwards as the last four characters. A Remember option writes them to a plain-text file on the user's own computer, and Forget everything removes the keys, the paths and that file.
+
+## Where it helps UK fintech firms
+
+Most UK fintechs that handle money, such as payment and e-money firms, lenders and crypto-asset businesses, fall under the Money Laundering Regulations 2017 and are supervised by the FCA. That means identifying who owns and controls each business customer, assessing the risk each one poses, applying enhanced checks to the riskiest, screening against sanctions lists, and keeping records that show why a decision was made. Fintechs tend to do this with small compliance teams, under pressure to onboard quickly, and with several separate vendors to stitch together.
+
+KYB-OS is aimed at that squeeze. Capacity is the central object: the dashboard starts from the number of cases the team can review and ranks the queue to fit it, so scarce hours go to the cases most likely to need them. The unknown-not-clear rule and the corroboration step are designed to address two failures a reviewer fears most, a hit that was silently scored clear and a pile of false alarms from name-only matches. Lookup and Network tie each flag to its source, which is the evidence a firm needs when it explains a decision to its money laundering reporting officer, its auditors or its supervisor.
+
+| Tab | The job it does for a fintech compliance team |
+|---|---|
+| Dashboard | Sizes the review queue against analyst capacity and shows which flags drive it. |
+| Map | Spots clusters across the customer book, such as many businesses at one registered office. |
+| Cases | Moves customers through screening, review, enhanced due diligence and decision, with a visible stage. |
+| Lookup | Checks a prospective business customer against Companies House at onboarding, with its officers and controllers. |
+| Network | Traces ownership and control to the people behind a business and explains a match. |
+| Models | Compares a transparent rules baseline with learned models before a score is trusted, and checks calibration. |
+| Vault | Records data sources, access scope and an audit trail of who did what. |
+| Settings | Connects the firm's own keys and reference lists, which stay on its own computer. |
+
+Several design choices answer concerns specific to regulated firms. A rules scorecard sits beside the learned models, so a firm can start with a rule set it can explain line by line and adopt a model only if it earns its place. Published work on machine learning for anti-money laundering flags interpretability as a concern for regulated firms, and the Models tab reports how closely interpretable and post-hoc explanations agree. Companies House data is free, so a young firm can try the workflow before it commits to an enterprise screening contract. The prototype also reads OpenSanctions exports, and a commercial firm would need to take out the licence that use requires.
+
+### What a firm would still need to do
+
+KYB-OS is a research prototype, not a compliance product. It has not been validated on real customers, nothing in it is legal advice, and it has not been reviewed by the FCA. A firm adopting these ideas would need to test the scoring against its own labelled outcomes, place any model under its model-risk governance, take out the data licences its use requires, handle personal data under UK GDPR, and keep a named person, such as the money laundering reporting officer, accountable for every decision. Several sources that matter to a fintech, such as the Gazette's insolvency notices and the FCA Register, are listed in the registry as planned and are not built yet.
 
 ## Why it exists
 
