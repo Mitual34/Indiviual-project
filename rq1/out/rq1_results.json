@@ -1,0 +1,147 @@
+{
+  "models": {
+    "Rules scorecard": {
+      "mean_cv_ap": 1.0,
+      "parameters": {
+        "jurisdiction_flag": 3,
+        "pep_flag": 4,
+        "sanctions_proximity_flag": 5
+      },
+      "holdout_ap": 0.24729906509003563,
+      "holdout_roc_auc": 0.6387607119314437,
+      "precision_at_capacity": 0.2639166666666667,
+      "recall_at_capacity": 0.38621951219512196
+    },
+    "Logistic regression": {
+      "mean_cv_ap": 0.9999999999999998,
+      "parameters": {
+        "C": 0.01,
+        "class_weight": null
+      },
+      "holdout_ap": 0.3076861857505004,
+      "holdout_roc_auc": 0.6713909030982201,
+      "precision_at_capacity": 0.26666666666666666,
+      "recall_at_capacity": 0.3902439024390244,
+      "holdout_ap_delta_vs_rules": 0.060387120660464755,
+      "delta_95_percent_ci": [
+        -0.029075089546175943,
+        0.152194082044548
+      ],
+      "valid_bootstrap_draws": 1000
+    },
+    "Explainable Boosting Machine": {
+      "mean_cv_ap": 1.0,
+      "parameters": {
+        "learning_rate": 0.01,
+        "max_leaves": 2
+      },
+      "holdout_ap": 0.2901821931180157,
+      "holdout_roc_auc": 0.7066107919766457,
+      "precision_at_capacity": 0.26666666666666666,
+      "recall_at_capacity": 0.3902439024390244,
+      "holdout_ap_delta_vs_rules": 0.042883128027980055,
+      "delta_95_percent_ci": [
+        -0.028536885626208718,
+        0.12243551662405845
+      ],
+      "valid_bootstrap_draws": 1000
+    },
+    "Random Forest": {
+      "mean_cv_ap": 1.0,
+      "parameters": {
+        "max_depth": 2,
+        "min_samples_leaf": 3
+      },
+      "holdout_ap": 0.28151366978443554,
+      "holdout_roc_auc": 0.692956022224315,
+      "precision_at_capacity": 0.25,
+      "recall_at_capacity": 0.36585365853658536,
+      "holdout_ap_delta_vs_rules": 0.03421460469439991,
+      "delta_95_percent_ci": [
+        -0.05096857689439372,
+        0.11227168574410587
+      ],
+      "valid_bootstrap_draws": 1000
+    },
+    "XGBoost": {
+      "mean_cv_ap": 1.0,
+      "parameters": {
+        "learning_rate": 0.05,
+        "max_depth": 2,
+        "n_estimators": 100
+      },
+      "holdout_ap": 0.23831714889874,
+      "holdout_roc_auc": 0.6366889537621245,
+      "precision_at_capacity": 0.25833333333333336,
+      "recall_at_capacity": 0.3780487804878049,
+      "holdout_ap_delta_vs_rules": -0.008981916191295625,
+      "delta_95_percent_ci": [
+        -0.05826078807464191,
+        0.03129678527370941
+      ],
+      "valid_bootstrap_draws": 1000
+    }
+  },
+  "concept_experiments": {
+    "perceptron_train_accuracy_on_flags": 1.0,
+    "perceptron_note": "1.0 means the training labels are linearly separable in the three flags and the perceptron convergence theorem applies; <1.0 means it does not.",
+    "logreg_weights_on_flags_train": {
+      "jurisdiction_flag": 13.988873037545053,
+      "pep_flag": 13.467792280046172,
+      "sanctions_proximity_flag": 12.551305570755574
+    },
+    "scorecard_weights": {
+      "jurisdiction_flag": 3,
+      "pep_flag": 4,
+      "sanctions_proximity_flag": 5
+    },
+    "train_label_vs_scorecard_ap": 1.0000000000000002,
+    "train_positive_rate": 0.22866666666666666,
+    "holdout_positive_rate": 0.13666666666666666,
+    "cv_minus_holdout_ap": {
+      "Rules scorecard": 0.7527009349099644,
+      "Logistic regression": 0.6923138142494993,
+      "Explainable Boosting Machine": 0.7098178068819843,
+      "Random Forest": 0.7184863302155644,
+      "XGBoost": 0.76168285110126
+    },
+    "logreg_holdout_ap_by_train_size": {
+      "150": 0.22349576566491897,
+      "300": 0.23536085174262206,
+      "600": 0.28532267790594634,
+      "900": 0.3137471150698566,
+      "1200": 0.3044799794634072,
+      "1500": 0.3103259802756227
+    },
+    "holdout_positive_rate_by_flag": {
+      "jurisdiction_flag": {
+        "0": 0.10931174089068826,
+        "1": 0.2641509433962264
+      },
+      "pep_flag": {
+        "0": 0.13167259786476868,
+        "1": 0.21052631578947367
+      },
+      "sanctions_proximity_flag": {
+        "0": 0.12280701754385964,
+        "1": 0.4
+      }
+    },
+    "train_positive_rate_by_flag": {
+      "jurisdiction_flag": {
+        "0": 0.09820732657833203,
+        "1": 1.0
+      },
+      "pep_flag": {
+        "0": 0.17416131334760884,
+        "1": 1.0
+      },
+      "sanctions_proximity_flag": {
+        "0": 0.19930795847750865,
+        "1": 1.0
+      }
+    },
+    "random_ap_baseline": 0.13666666666666666
+  },
+  "dataset": "synthetic demonstration"
+}

@@ -1,0 +1,6 @@
+model,ref_holdout_ap,my_holdout_ap,ref_prec_at_cap,my_prec_at_cap,ref_params,my_params
+Rules scorecard,0.24729906509003563,0.24729906509003563,0.25,0.2639166666666667,"{""jurisdiction_flag"": 3, ""pep_flag"": 4, ""sanctions_proximity_flag"": 5}","{""jurisdiction_flag"": 3, ""pep_flag"": 4, ""sanctions_proximity_flag"": 5}"
+Logistic regression,0.2971563255540431,0.3076861857505004,0.2833333333333333,0.26666666666666666,"{""C"": 0.1, ""class_weight"": ""balanced""}","{""C"": 0.01, ""class_weight"": null}"
+Explainable Boosting Machine,0.26119890475388524,0.2901821931180157,0.21666666666666667,0.26666666666666666,"{""learning_rate"": 0.02, ""max_leaves"": 2}","{""learning_rate"": 0.01, ""max_leaves"": 2}"
+Random Forest,0.24024482728178295,0.28151366978443554,0.3,0.25,"{""max_depth"": 4, ""min_samples_leaf"": 3}","{""max_depth"": 2, ""min_samples_leaf"": 3}"
+XGBoost,0.1759341958740026,0.23831714889874,0.11666666666666667,0.25833333333333336,"{""learning_rate"": 0.1, ""max_depth"": 2, ""n_estimators"": 200}","{""learning_rate"": 0.05, ""max_depth"": 2, ""n_estimators"": 100}"
