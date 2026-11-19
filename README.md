@@ -16,6 +16,7 @@ IEEE Access 11 (arXiv:2201.04207).** The earlier basis, Ananthaswamy's *Why Mach
 source vault) built from the project's own synthetic outputs. Rebuild with `python ui/build_data.py && python ui/build_map.py && python ui/build.py`
 (`build_map.py` needs `shapely` and the GB local-authority GeoJSON from martinjc/UK-GeoJSON; Northern Ireland is not in that set).
 Case locations on the map are simulated, not real addresses.
+Run it locally with `python ui/serve.py` (opens http://localhost:8000/kyb_os.html; `python ui/serve.py 8080` for another port).
 
 ## Run
     pip install -r rq1/requirements.txt scipy
