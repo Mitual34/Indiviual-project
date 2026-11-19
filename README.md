@@ -16,7 +16,11 @@ IEEE Access 11 (arXiv:2201.04207).** The earlier basis, Ananthaswamy's *Why Mach
 source vault) built from the project's own synthetic outputs. Rebuild with `python ui/build_data.py && python ui/build_map.py && python ui/build.py`
 (`build_map.py` needs `shapely` and the GB local-authority GeoJSON from martinjc/UK-GeoJSON; Northern Ireland is not in that set).
 Case locations on the map are simulated, not real addresses.
-Run it locally with `python ui/serve.py` (opens http://localhost:8000/kyb_os.html; `python ui/serve.py 8080` for another port).
+Run it locally with `python ui/serve.py`. It asks for your Companies House API key (hidden input; press Enter to skip) and opens
+http://localhost:8000/kyb_os.html#lookup. The key stays in the server process and is never sent to the browser.
+Options: a port number, `--fake` (fictional company 00000001, no key or network), `--sanctions FILE`, `--peps FILE`, `--policy FILE`
+(OpenSanctions CSV exports and the dated jurisdiction policy), `--no-geocode` (skip api.postcodes.io map pins).
+The Lookup view returns the same feature row as the model data; sources that are not loaded stay *unknown*, never clear.
 
 ## Run
     pip install -r rq1/requirements.txt scipy

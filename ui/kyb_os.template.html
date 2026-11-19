@@ -151,10 +151,10 @@ const log=(a,d)=>{st.log.unshift({t:new Date().toTimeString().slice(0,8),who:({i
 const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)};
 const cnt=s=>D.cases.filter(c=>stage(c)===s).length;
 const ICON={dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
- map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',cases:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+ lookup:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>',cases:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
  network:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="m8 7 8 1M7 8l4 8M17 10l-4 6"/>',
  models:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',vault:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'};
-const VIEWS=[['dashboard','Dashboard','Case screening'],['map','Map','Registered offices and shared addresses'],['cases','Cases','Review pipeline'],['network','Network','Ownership and officer links'],['models','Models','Scoring methods on the holdout'],['vault','Vault','Sources, scopes and audit']];
+const VIEWS=[['dashboard','Dashboard','Case screening'],['map','Map','Registered offices and shared addresses'],['cases','Cases','Review pipeline'],['lookup','Lookup','Live Companies House check'],['network','Network','Ownership and officer links'],['models','Models','Scoring methods on the holdout'],['vault','Vault','Sources, scopes and audit']];
 
 /* ---------------- Dashboard ---------------- */
 function vDashboard(){
@@ -215,7 +215,7 @@ function fitTo(cs){if(!cs.length)return fitVB();const xs=cs.map(c=>c.x),ys=cs.ma
 function mountMap(){
   const svg=$('#svg');$('#gl').innerHTML=GEO.lads.map((l,i)=>`<path data-i="${i}" d="${l.d}" vector-effect="non-scaling-stroke" stroke-width=".6" stroke-linejoin="round"/>`).join('');
   MAP.els=[...document.querySelectorAll('#gl path')];
-  fitVB();paintAll();if(MAP.sel&&byId[MAP.sel])fitTo([byId[MAP.sel]]);else if(st.q)fitTo(MAP.f_);
+  fitVB();paintAll();if(LK.focus){const p=LK.pins.find(x=>x.number===LK.focus);LK.focus=null;if(p)fitTo([p])}else if(MAP.sel&&byId[MAP.sel])fitTo([byId[MAP.sel]]);else if(st.q)fitTo(MAP.f_);
   const pt=(e)=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
   svg.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.25:.8,pt(e))},{passive:false});
   svg.addEventListener('pointerdown',e=>{if(e.button!==0)return;MAP.moved=false;const s=pt(e);MAP.drag={x:e.clientX,y:e.clientY,vb:{...MAP.vb},s};
@@ -249,6 +249,7 @@ function paintPins(){
         <text class="halo" style="stroke-width:${4/q}px" x="${a.x+14/q}" y="${a.y-9/q}" font-size="${11/q}" fill="var(--bad)" font-weight="600">${MAP.vb.w<MAP.fit/3?m.length+' at '+esc(a.name.replace(' (demo)','')):m.length}</text>`});
   if(MAP.L.pins)f.slice().sort((a,b)=>a.score-b.score).forEach(x=>{const r=(3+x.score/100*3.2)/q,col=x.score>=85?'--bad':x.score>=70?'--warn':'--info',on=MAP.sel===x.id||(MAP.as&&MAP.as.ids.includes(x.id));
     h+=`<circle data-id="${x.id}" cx="${x.x}" cy="${x.y}" r="${r}" fill="var(${col})" fill-opacity=".85" stroke="${on?'var(--fg)':'var(--panel)'}" stroke-width="${(on?2.2:.9)/q}"><title>${esc(nm(x))} · score ${x.score}</title></circle>`});
+  LK.pins.forEach(p=>{const r=8/q;h+=`<g data-live="${esc(p.number)}"><path d="M${p.x} ${p.y-r}L${p.x+r} ${p.y}L${p.x} ${p.y+r}L${p.x-r} ${p.y}Z" fill="var(--accent)" stroke="var(--fg)" stroke-width="${1.6/q}"/><text class="halo" style="stroke-width:${4/q}px" x="${p.x+r+3/q}" y="${p.y+4/q}" font-size="${11/q}" fill="var(--fg)" font-weight="600">${esc(p.name.slice(0,26))}</text></g>`});
   $('#gp').innerHTML=h;$('#gc').innerHTML=c;}
 function caseCard(c){return `<div class="sec"><div class="lab">Selected case</div><h4 style="font:600 18px var(--serif);margin:6px 0 4px">${esc(nm(c))}</h4>
   <div class="small">${c.id} · ${c.sector} · ${c.status} · ${c.age} yrs</div><p style="margin:8px 0">${esc(c.addrname||'Simulated address')} · ${esc(GEO.lads[c.lad].n)}</p>
@@ -272,7 +273,7 @@ function side(){
    ${['Jurisdiction','PEP','Sanctions'].map((l,i)=>`<label class="opt"><input type="checkbox" data-f="${i}" ${MAP.f[i]?'checked':''}> ${l} flag only</label>`).join('')}</div>
   <div class="sec"><div class="lab">Shared addresses</div>${cl.length?cl.map(x=>`<div class="row" style="padding:7px 0"><div class="t"><b style="font-size:14px">${esc(x.a.name)}</b><small>${esc(GEO.lads[x.a.lad].n)}</small></div><span class="chip bad">${x.n} cos</span></div>`).join(''):'<p class="note">None under the current filters.</p>'}
    <p class="note">Many companies at one registered office is a classic shell-company signal.</p></div>
-  <div class="sec"><div class="lab">Legend</div><div class="legend"><span><i style="background:var(--bad)"></i>score 85+</span><span><i style="background:var(--warn)"></i>70–84</span><span><i style="background:var(--info)"></i>below 70</span></div>
+  ${LK.pins.length?`<div class="sec"><div class="lab">Live lookups</div>${LK.pins.map(p=>`<div class="row" style="padding:7px 0"><div class="t"><b style="font-size:14px">${esc(p.name)}</b><small>${esc(p.number)} · ${esc(p.office||'')}</small></div><span class="chip good">live</span></div>`).join('')}</div>`:''}<div class="sec"><div class="lab">Legend</div><div class="legend"><span><i style="background:var(--bad)"></i>score 85+</span><span><i style="background:var(--warn)"></i>70–84</span><span><i style="background:var(--info)"></i>below 70</span></div>
    <p class="note" style="margin-top:10px">Locations are simulated for this demo, not real addresses. A live build would geocode each registered-office postcode from Companies House. Great Britain only; Northern Ireland is not in this boundary set. Boundaries: 2013 local authority districts from martinjc/UK-GeoJSON. Contains OS data © Crown copyright and database right.</p></div>`;}
 
 /* ---------------- Network ---------------- */
@@ -337,8 +338,60 @@ function vVault(){
     <div class="seg" role="group" aria-label="Scope">${['internal','partner','regulator'].map(s=>`<button data-act="scope" data-s="${s}" aria-pressed="${st.scope===s}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div></div>
    <div class="card"><div class="hd"><div class="lab">Audit trail</div></div>${st.log.slice(0,9).map(l=>`<div class="sig"><i style="background:var(--${l.a==='Refused read'?'bad':'info'})"></i><div><b>${l.a} <span class="chip">${l.who}</span></b><small>${l.t} · ${esc(l.d)}</small></div></div>`).join('')}</div></div></div>`;}
 
+
+/* ---------------- Live lookup (needs the local server: python ui/serve.py) ---------------- */
+const LK={status:null,res:null,list:null,busy:false,err:null,pins:[],focus:null};
+const project=(lat,lon)=>{const P=GEO.proj;return{x:(lon-P.minx)*P.cosl*P.K+P.off,y:(P.maxy-lat)*P.K+P.off}};
+async function api(path){const r=await fetch(path,{headers:{accept:'application/json'}});let b={};try{b=await r.json()}catch(e){}if(!r.ok)throw new Error(b.error||('Request failed ('+r.status+')'));return b}
+function vLookup(){return `<div class="grid g2"><div style="display:grid;gap:16px;align-content:start;min-width:0">
+  <form class="card pad" id="lkf"><div class="lab">Companies House lookup</div>
+   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="lkq" class="sel" style="flex:1;min-width:160px" placeholder="Company number or name" autocomplete="off" aria-label="Company number or name"><button class="btn on" type="submit">Look up</button></div>
+   <p class="note" style="margin-top:8px">Enter a company number (for example 00445790) or part of a name. Results use the same feature definitions as the model data.</p></form>
+  <div id="lkout"></div></div>
+  <div style="display:grid;gap:16px;align-content:start;min-width:0"><div class="card pad" id="lkside"></div></div></div>`}
+async function mountLookup(){lkPaint();if(!LK.status){try{LK.status=await api('/api/status')}catch(e){LK.status={mode:'unavailable'}}lkPaint()}}
+function lkPaint(){
+  const S=LK.status||{mode:'checking'},el=$('#lkside'),out=$('#lkout');if(!el||!out)return;
+  const yn=(v,l)=>`<div class="opt"><span class="chip ${v?'good':''}">${v?'loaded':'not loaded'}</span> ${l}</div>`;
+  el.innerHTML=`<div class="lab">Server</div><p style="margin:8px 0"><span class="chip ${S.mode==='live'?'good':S.mode==='fake'?'warn':S.mode==='unavailable'?'bad':''}">${S.mode==='fake'?'demo company only':S.mode}</span></p>
+   ${S.mode==='unavailable'?'<p class="note">The local server was not detected. This page needs it for live lookups. Run <b>python ui/serve.py</b> from the repository folder and open the address it prints.</p>':S.mode==='off'?'<p class="note">The server is running without an API key. Restart it and enter a Companies House key when asked.</p>':S.mode==='fake'?'<p class="note">Fictional company 00000001 only. Start without <b>--fake</b> to use the live register.</p>':''}
+   ${S.mode&&S.mode!=='unavailable'&&S.mode!=='checking'?yn(S.sanctions,'Sanctions list')+yn(S.peps,'PEP list')+yn(S.policy,'Jurisdiction policy')+yn(S.geocode,'Postcode lookup (map pins)'):''}
+   <p class="note" style="margin-top:10px">Unloaded sources leave their flag as <b>unknown</b>, never clear. Your API key stays in the server process and is never sent to this page.</p>`;
+  let h='';
+  if(LK.busy)h='<div class="card pad small">Looking up…</div>';
+  else if(LK.err)h=`<div class="card pad" style="border-color:var(--bad)"><b style="color:var(--bad)">${esc(LK.err)}</b></div>`;
+  else if(LK.list)h=`<div class="card"><div class="hd"><div class="lab">${LK.list.length} match${LK.list.length===1?'':'es'}</div></div>${LK.list.map(i=>`<div class="row"><div class="t"><b>${esc(i.name||'')}</b><small>${esc(i.number||'')} · ${esc(i.status||'')} · ${esc(i.address||'')}</small></div><button class="btn" data-act="lkgo" data-n="${esc(i.number)}">Open</button></div>`).join('')||'<div class="row small">No companies found.</div>'}</div>`;
+  else if(LK.res)h=lkResult(LK.res);
+  else h='<div class="card pad small">Search for a company to see its registry facts, flags and officers here.</div>';
+  out.innerHTML=h;}
+function flagCell(f,label){return f==null?'<span class="chip">unknown</span>':f?`<span class="chip bad">${label||'flag'}</span>`:'<span class="chip good">clear</span>'}
+function lkResult(r){const w=r.row,p=r.profile,hits=(k)=>(w[k]||[]).map(x=>`<div class="note">${esc(x[1])} · score ${x[2]} · ${esc(x[3])}</div>`).join('');
+  const st={corroborated:'corroborated',unresolved_candidate:'unresolved candidate (name only)',no_match:'no match',source_not_loaded:'source not loaded'};
+  return `<div class="card"><div class="hd"><div><div class="lab">${esc(p.number)} · ${esc(p.type||'')}</div><h3 style="margin:4px 0 0;font:600 20px var(--serif)">${esc(p.name)}</h3></div><span class="chip ${p.status==='active'?'good':'warn'}">${esc(p.status||'')}</span></div>
+   <div class="pad"><div class="small">${esc(p.office||'No registered office')} · incorporated ${esc(p.created||'unknown')} · SIC ${esc((p.sic||[]).join(', ')||'unknown')}</div>
+   <div class="scroll"><table style="margin-top:12px"><thead><tr><th>Feature</th><th>Value</th><th>Note</th></tr></thead><tbody>
+    <tr><td>Company age</td><td>${w.company_age_years??'unknown'} yrs</td><td></td></tr>
+    <tr><td>Late filings (3 yrs)</td><td>${w.late_filings??'unknown'}</td><td class="note">Estimate from statutory deadlines${p.accounts_overdue?'; accounts overdue now':''}</td></tr>
+    <tr><td>Officer changes (12 m)</td><td>${w.officer_changes??'unknown'}</td><td></td></tr>
+    <tr><td>Jurisdiction</td><td>${flagCell(w.jurisdiction_flag,'listed')}</td><td class="note">${w.jurisdiction_flag==null?'No policy file loaded or no country data':esc((w.jurisdiction_lists||[]).join(', ')||'No listed country in the network')}</td></tr>
+    <tr><td>Sanctions proximity</td><td>${flagCell(w.sanctions_proximity_flag)}</td><td>${st[w.sanctions_status]||''}${hits('sanctions_hits')}</td></tr>
+    <tr><td>PEP</td><td>${flagCell(w.pep_flag)}</td><td>${st[w.pep_status]||''}${hits('pep_hits')}</td></tr>
+    <tr><td>Adverse media</td><td><span class="chip">unknown</span></td><td class="note">GDELT not connected in the server</td></tr></tbody></table></div>
+   <div class="acts" style="margin-top:12px">${r.geo?'<button class="btn" style="width:auto;height:auto" data-act="lkmap">Show on map</button>':'<span class="note">No map pin: postcode lookup not available.</span>'}</div></div></div>
+  <div class="card" style="margin-top:16px"><div class="hd"><div class="lab">Officers</div></div><div class="scroll"><table><thead><tr><th>Name</th><th>Role</th><th>Appointed</th><th>Resigned</th><th>Residence</th></tr></thead><tbody>
+   ${r.officers.map(o=>`<tr><td>${esc(o.name||'')}${o.birth_year?` <span class="note">b. ${o.birth_year}</span>`:''}</td><td>${esc(o.role||'')}</td><td>${esc(o.appointed||'')}</td><td>${esc(o.resigned||'')}</td><td>${esc(o.residence||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="note">No officers returned.</td></tr>'}</tbody></table></div></div>
+  <div class="card" style="margin-top:16px"><div class="hd"><div class="lab">Persons with significant control</div></div><div class="scroll"><table><thead><tr><th>Name</th><th>Kind</th><th>Control</th><th>Country</th></tr></thead><tbody>
+   ${r.pscs.map(o=>`<tr><td>${esc(o.name||'')}</td><td>${esc(o.kind||'')}</td><td>${esc((o.control||[]).join('; '))}</td><td>${esc(o.country||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="note">None registered.</td></tr>'}</tbody></table></div></div>`}
+async function lkRun(q){q=q.trim();if(!q)return;LK.busy=true;LK.err=null;LK.list=null;LK.res=null;lkPaint();
+  try{if(/^[A-Za-z0-9]{6,8}$/.test(q)&&/\d/.test(q))await lkLoad(q);else{LK.list=(await api('/api/search?q='+encodeURIComponent(q))).items}}
+  catch(e){LK.err=e.message==='Failed to fetch'?'Could not reach the local server. Run python ui/serve.py and open the address it prints.':e.message}
+  LK.busy=false;lkPaint();}
+async function lkLoad(n){const r=await api('/api/company/'+encodeURIComponent(n));LK.res=r;LK.list=null;
+  if(r.geo){const pt=project(r.geo.lat,r.geo.lon);LK.pins=LK.pins.filter(p=>p.number!==r.profile.number).concat([{number:r.profile.number,name:r.profile.name,office:r.profile.office,...pt}])}
+  log('Live lookup',r.profile.number+' checked ('+r.mode+')')}
+
 /* ---------------- Router and events ---------------- */
-const V={dashboard:[vDashboard],map:[vMap,mountMap],cases:[vCases],network:[vNetwork],models:[vModels],vault:[vVault]};
+const V={dashboard:[vDashboard],map:[vMap,mountMap],cases:[vCases],lookup:[vLookup,mountLookup],network:[vNetwork],models:[vModels],vault:[vVault]};
 function render(){const v=VIEWS.find(x=>x[0]===st.view);$('#ttl').textContent=v[1];$('#sub').textContent=v[2];
   $('#nav').innerHTML=VIEWS.map(([k,l])=>`<button data-go="${k}" ${k===st.view?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ICON[k]}</svg>${l}</button>`).join('');
   const el=$('#view');el.className='view'+(st.view==='map'?' flush':'');el.innerHTML=V[st.view][0]();V[st.view][1]&&V[st.view][1]();el.scrollTop=0;}
@@ -354,6 +407,8 @@ document.addEventListener('click',e=>{
   else if(a==='net'){st.sel=id;go('network')}
   else if(a==='pin'){MAP.sel=id;MAP.as=null;st.sel=id;go('map')}
   else if(a==='scope'){st.scope=b.dataset.s;log('Scope change','Session scope set to '+st.scope);render()}
+  else if(a==='lkgo'){LK.busy=true;LK.err=null;lkPaint();lkLoad(b.dataset.n).catch(e=>LK.err=e.message).finally(()=>{LK.busy=false;lkPaint()})}
+  else if(a==='lkmap'){LK.focus=LK.res.profile.number;MAP.sel=null;MAP.as=null;go('map')}
   else if(a==='zi')zoom(1.6);else if(a==='zo')zoom(1/1.6);else if(a==='zf')fitVB();
   else if(a==='area'){MAP.area=!MAP.area;$('#areabtn').classList.toggle('on',MAP.area);$('#svg').classList.toggle('area',MAP.area);if(!MAP.area)$('#gs').setAttribute('display','none')}
   else if(a==='clear'){MAP.as=null;MAP.sel=null;$('#gs').setAttribute('display','none');paintPins();side()}
@@ -367,6 +422,7 @@ document.addEventListener('input',e=>{const t=e.target;
   if(t.id==='min'){MAP.min=+t.value;paintAll();t.nextElementSibling.textContent=t.value}
   else if(t.id==='q'){st.q=t.value;if(st.view==='map'){paintAll();side();st.q?fitTo(MAP.f_):fitVB()}else render()}});
 document.addEventListener('pointerdown',e=>{const n=e.target.closest('#net g[data-n]');if(!n)return;const nd=NET.g.N.find(x=>x.id===n.dataset.n);$('#evp').innerHTML=ev(NET.g,nd).map(x=>`<div>${x}</div>`).join('')});
+document.addEventListener('submit',e=>{if(e.target.id==='lkf'){e.preventDefault();lkRun($('#lkq').value)}});
 addEventListener('hashchange',()=>go(location.hash.slice(1)));
 addEventListener('resize',()=>{if(st.view==='map'&&MAP.vb){fitVB()}});
 go(location.hash.slice(1)||'dashboard');

@@ -39,6 +39,8 @@ class CompaniesHouse:
         self.get = get
 
     def profile(self, n): return self.get(f"{BASE}/company/{n}")
+    def search(self, q, n=10):
+        r = self.get(f"{BASE}/search/companies", {"q": q, "items_per_page": n}); return (r or {}).get("items", [])
     def insolvency(self, n): return self.get(f"{BASE}/company/{n}/insolvency")
     def charges(self, n): return self.get(f"{BASE}/company/{n}/charges")
 

@@ -23,7 +23,7 @@ for f, g in zip(src, geoms):
     rp = max(parts, key=lambda p: p.area).representative_point(); cx, cy = P(rp.x, rp.y)
     lads.append(dict(c=f["properties"]["LAD13CD"], n=f["properties"]["LAD13NM"], d=d, cx=round(cx, 1), cy=round(cy, 1), a=g.area))
     polys.append(parts)
-json.dump(dict(w=W, h=H, lads=[{**l, "a": round(l["a"], 5)} for l in lads]), open(HERE / "uk.json", "w"), separators=(",", ":"))
+json.dump(dict(w=W, h=H, proj=dict(minx=minx, maxy=maxy, cosl=cosl, K=K, off=20), lads=[{**l, "a": round(l["a"], 5)} for l in lads]), open(HERE / "uk.json", "w"), separators=(",", ":"))
 
 data = json.load(open(HERE / "data.json")); cases = data["cases"]
 hsh = lambda s: int(hashlib.md5(s.encode()).hexdigest(), 16)
